@@ -15,23 +15,25 @@ from core.types import (
 )
 from providers.base import BaseProvider
 
-SERVER_TOOL_TYPES = frozenset({
-    "web_search_20250305",
-    "web_search_20260209",
-    "web_fetch_20250910",
-    "web_fetch_20260209",
-    "web_fetch_20260309",
-    "code_execution_20250522",
-    "code_execution_20250825",
-    "code_execution_20260120",
-    "bash_20250124",
-    "text_editor_20250124",
-    "text_editor_20250429",
-    "text_editor_20250728",
-    "memory_20250818",
-    "tool_search_tool_bm25_20251119",
-    "tool_search_tool_regex_20251119",
-})
+SERVER_TOOL_TYPES = frozenset(
+    {
+        "web_search_20250305",
+        "web_search_20260209",
+        "web_fetch_20250910",
+        "web_fetch_20260209",
+        "web_fetch_20260309",
+        "code_execution_20250522",
+        "code_execution_20250825",
+        "code_execution_20260120",
+        "bash_20250124",
+        "text_editor_20250124",
+        "text_editor_20250429",
+        "text_editor_20250728",
+        "memory_20250818",
+        "tool_search_tool_bm25_20251119",
+        "tool_search_tool_regex_20251119",
+    }
+)
 
 
 def _to_anthropic_messages(
@@ -112,19 +114,23 @@ def _convert_user_content_parts(parts: List[Any]) -> List[Dict[str, Any]]:
                 if url.startswith("data:"):
                     media_type, _, encoded = url.partition(";base64,")
                     media_type = media_type.replace("data:", "")
-                    blocks.append({
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": media_type,
-                            "data": encoded,
-                        },
-                    })
+                    blocks.append(
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": media_type,
+                                "data": encoded,
+                            },
+                        }
+                    )
                 else:
-                    blocks.append({
-                        "type": "image",
-                        "source": {"type": "url", "url": url},
-                    })
+                    blocks.append(
+                        {
+                            "type": "image",
+                            "source": {"type": "url", "url": url},
+                        }
+                    )
             elif ptype == "image":
                 blocks.append(part)
             elif ptype == "document":
@@ -249,10 +255,12 @@ class AnthropicProvider(BaseProvider):
                 block_citations = getattr(block, "citations", None)
                 if block_citations:
                     for cit in block_citations:
-                        citations_list.append({
-                            "type": getattr(cit, "type", ""),
-                            "cited_text": getattr(cit, "cited_text", ""),
-                        })
+                        citations_list.append(
+                            {
+                                "type": getattr(cit, "type", ""),
+                                "cited_text": getattr(cit, "cited_text", ""),
+                            }
+                        )
             elif block.type == "thinking":
                 thinking_content += getattr(block, "thinking", "")
                 sig = getattr(block, "signature", "")
@@ -263,11 +271,13 @@ class AnthropicProvider(BaseProvider):
             elif block.type == "tool_use":
                 tool_calls.append(ToolCall(id=block.id, name=block.name, arguments=block.input))
             elif block.type == "server_tool_use":
-                tool_calls.append(ToolCall(
-                    id=block.id,
-                    name=getattr(block, "name", ""),
-                    arguments=getattr(block, "input", {}),
-                ))
+                tool_calls.append(
+                    ToolCall(
+                        id=block.id,
+                        name=getattr(block, "name", ""),
+                        arguments=getattr(block, "input", {}),
+                    )
+                )
             elif block.type in (
                 "web_search_tool_result",
                 "web_fetch_tool_result",
@@ -425,9 +435,9 @@ class AnthropicProvider(BaseProvider):
                                 tc = ToolCall(
                                     id=block.id,
                                     name=getattr(block, "name", ""),
-                                    arguments=getattr(block, "input", {}) if isinstance(
-                                        getattr(block, "input", {}), dict
-                                    ) else {},
+                                    arguments=getattr(block, "input", {})
+                                    if isinstance(getattr(block, "input", {}), dict)
+                                    else {},
                                 )
                                 yield StreamEvent(type="tool_call", tool_call=tc)
 

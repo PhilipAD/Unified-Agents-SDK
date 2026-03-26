@@ -21,14 +21,16 @@ ROLE_MAP = {
     Role.TOOL: "tool",
 }
 
-AGENT_TOOL_TYPES = frozenset({
-    "web_search",
-    "web_search_premium",
-    "code_interpreter",
-    "image_generation",
-    "document_library",
-    "connector",
-})
+AGENT_TOOL_TYPES = frozenset(
+    {
+        "web_search",
+        "web_search_premium",
+        "code_interpreter",
+        "image_generation",
+        "document_library",
+        "connector",
+    }
+)
 
 
 def _to_mistral_messages(
@@ -87,20 +89,12 @@ def _convert_content_parts(parts: List[Any]) -> List[Dict[str, Any]]:
                 blocks.append({"type": "text", "text": part.get("text", "")})
             elif ptype == "image_url":
                 url_info = part.get("image_url", {})
-                url = (
-                    url_info.get("url", "")
-                    if isinstance(url_info, dict)
-                    else url_info
-                )
+                url = url_info.get("url", "") if isinstance(url_info, dict) else url_info
                 entry: Dict[str, Any] = {
                     "type": "image_url",
                     "image_url": {"url": url},
                 }
-                detail = (
-                    url_info.get("detail")
-                    if isinstance(url_info, dict)
-                    else None
-                )
+                detail = url_info.get("detail") if isinstance(url_info, dict) else None
                 if detail:
                     entry["image_url"]["detail"] = detail
                 blocks.append(entry)
@@ -231,16 +225,14 @@ class MistralProvider(BaseProvider):
             for tc in raw_tcs:
                 fn = tc.function
                 args_raw = fn.arguments
-                arguments = (
-                    json.loads(args_raw)
-                    if isinstance(args_raw, str)
-                    else (args_raw or {})
+                arguments = json.loads(args_raw) if isinstance(args_raw, str) else (args_raw or {})
+                tool_calls.append(
+                    ToolCall(
+                        id=getattr(tc, "id", "") or "",
+                        name=fn.name,
+                        arguments=arguments,
+                    )
                 )
-                tool_calls.append(ToolCall(
-                    id=getattr(tc, "id", "") or "",
-                    name=fn.name,
-                    arguments=arguments,
-                ))
 
         out_msg = NormalizedMessage(
             role=Role.ASSISTANT,
@@ -251,15 +243,30 @@ class MistralProvider(BaseProvider):
         usage: Dict[str, Any] = {}
         raw_usage = getattr(resp, "usage", None)
         if raw_usage:
-            usage["input_tokens"] = getattr(
-                raw_usage, "prompt_tokens", 0,
-            ) or 0
-            usage["output_tokens"] = getattr(
-                raw_usage, "completion_tokens", 0,
-            ) or 0
-            usage["total_tokens"] = getattr(
-                raw_usage, "total_tokens", 0,
-            ) or 0
+            usage["input_tokens"] = (
+                getattr(
+                    raw_usage,
+                    "prompt_tokens",
+                    0,
+                )
+                or 0
+            )
+            usage["output_tokens"] = (
+                getattr(
+                    raw_usage,
+                    "completion_tokens",
+                    0,
+                )
+                or 0
+            )
+            usage["total_tokens"] = (
+                getattr(
+                    raw_usage,
+                    "total_tokens",
+                    0,
+                )
+                or 0
+            )
 
         finish_reason = getattr(choice, "finish_reason", None)
         if finish_reason:
@@ -338,11 +345,17 @@ class MistralProvider(BaseProvider):
                     if raw_usage:
                         usage: Dict[str, Any] = {
                             "input_tokens": getattr(
-                                raw_usage, "prompt_tokens", 0,
-                            ) or 0,
+                                raw_usage,
+                                "prompt_tokens",
+                                0,
+                            )
+                            or 0,
                             "output_tokens": getattr(
-                                raw_usage, "completion_tokens", 0,
-                            ) or 0,
+                                raw_usage,
+                                "completion_tokens",
+                                0,
+                            )
+                            or 0,
                         }
                         yield StreamEvent(type="usage", usage=usage)
                     continue
@@ -358,7 +371,8 @@ class MistralProvider(BaseProvider):
                         for c in content:
                             if hasattr(c, "text"):
                                 yield StreamEvent(
-                                    type="chunk", delta=c.text,
+                                    type="chunk",
+                                    delta=c.text,
                                 )
 
                 raw_tcs = getattr(delta, "tool_calls", None)
@@ -393,13 +407,11 @@ class MistralProvider(BaseProvider):
                 if finish and str(finish) == "tool_calls":
                     for _idx in sorted(pending_tool_calls):
                         e = pending_tool_calls[_idx]
-                        args = (
-                            json.loads(e["arguments"])
-                            if e["arguments"]
-                            else {}
-                        )
+                        args = json.loads(e["arguments"]) if e["arguments"] else {}
                         tc = ToolCall(
-                            id=e["id"], name=e["name"], arguments=args,
+                            id=e["id"],
+                            name=e["name"],
+                            arguments=args,
                         )
                         yield StreamEvent(type="tool_call", tool_call=tc)
                     pending_tool_calls.clear()

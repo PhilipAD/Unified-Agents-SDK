@@ -16,14 +16,16 @@ from core.types import (
 )
 from providers.base import BaseProvider
 
-BUILT_IN_TOOL_TYPES = frozenset({
-    "web_search",
-    "file_search",
-    "code_interpreter",
-    "computer_use",
-    "image_generation",
-    "mcp",
-})
+BUILT_IN_TOOL_TYPES = frozenset(
+    {
+        "web_search",
+        "file_search",
+        "code_interpreter",
+        "computer_use",
+        "image_generation",
+        "mcp",
+    }
+)
 
 
 def _to_input_items(
@@ -47,25 +49,31 @@ def _to_input_items(
 
         elif m.role == Role.ASSISTANT:
             if m.content:
-                items.append({
-                    "type": "message",
-                    "role": "assistant",
-                    "content": [{"type": "output_text", "text": m.content}],
-                })
+                items.append(
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": m.content}],
+                    }
+                )
             for tc in m.tool_calls:
-                items.append({
-                    "type": "function_call",
-                    "call_id": tc.id,
-                    "name": tc.name,
-                    "arguments": json.dumps(tc.arguments),
-                })
+                items.append(
+                    {
+                        "type": "function_call",
+                        "call_id": tc.id,
+                        "name": tc.name,
+                        "arguments": json.dumps(tc.arguments),
+                    }
+                )
 
         elif m.role == Role.TOOL:
-            items.append({
-                "type": "function_call_output",
-                "call_id": m.tool_call_id or "",
-                "output": m.content,
-            })
+            items.append(
+                {
+                    "type": "function_call_output",
+                    "call_id": m.tool_call_id or "",
+                    "output": m.content,
+                }
+            )
 
     return instructions, items
 
@@ -85,13 +93,15 @@ def _to_tools(
 
     if tools:
         for t in tools:
-            result.append({
-                "type": "function",
-                "name": t.name,
-                "description": t.description,
-                "parameters": t.json_schema,
-                "strict": False,
-            })
+            result.append(
+                {
+                    "type": "function",
+                    "name": t.name,
+                    "description": t.description,
+                    "parameters": t.json_schema,
+                    "strict": False,
+                }
+            )
 
     if built_in_tools:
         for bt in built_in_tools:
@@ -210,11 +220,13 @@ class OpenAIResponsesProvider(BaseProvider):
             elif item_type == "function_call":
                 args_raw = getattr(item, "arguments", "{}")
                 arguments = json.loads(args_raw) if isinstance(args_raw, str) else args_raw
-                tool_calls.append(ToolCall(
-                    id=getattr(item, "call_id", ""),
-                    name=item.name,
-                    arguments=arguments,
-                ))
+                tool_calls.append(
+                    ToolCall(
+                        id=getattr(item, "call_id", ""),
+                        name=item.name,
+                        arguments=arguments,
+                    )
+                )
 
             elif item_type == "reasoning":
                 for part in getattr(item, "summary", []) or []:

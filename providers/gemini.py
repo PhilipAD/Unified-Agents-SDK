@@ -98,11 +98,9 @@ class GeminiProvider(BaseProvider):
                 )
             result.append(genai_types.Tool(function_declarations=declarations))
 
-        for bt_name in (built_in_tools or []):
+        for bt_name in built_in_tools or []:
             if bt_name == "code_execution":
-                result.append(
-                    genai_types.Tool(code_execution=genai_types.ToolCodeExecution())
-                )
+                result.append(genai_types.Tool(code_execution=genai_types.ToolCodeExecution()))
             elif bt_name == "google_search":
                 search_kwargs: Dict[str, Any] = {}
                 if built_in_tool_configs:
@@ -116,13 +114,9 @@ class GeminiProvider(BaseProvider):
                     genai_types.Tool(google_search=genai_types.GoogleSearch(**search_kwargs))
                 )
             elif bt_name == "url_context":
-                result.append(
-                    genai_types.Tool(url_context=genai_types.UrlContext())
-                )
+                result.append(genai_types.Tool(url_context=genai_types.UrlContext()))
             elif bt_name == "google_maps":
-                result.append(
-                    genai_types.Tool(google_maps=genai_types.GoogleMaps())
-                )
+                result.append(genai_types.Tool(google_maps=genai_types.GoogleMaps()))
             elif bt_name == "computer_use":
                 cu_kwargs: Dict[str, Any] = {}
                 if built_in_tool_configs:
@@ -130,9 +124,7 @@ class GeminiProvider(BaseProvider):
                         if cfg.get("type") == "computer_use":
                             if "environment" in cfg:
                                 cu_kwargs["environment"] = cfg["environment"]
-                result.append(
-                    genai_types.Tool(computer_use=genai_types.ComputerUse(**cu_kwargs))
-                )
+                result.append(genai_types.Tool(computer_use=genai_types.ComputerUse(**cu_kwargs)))
             elif bt_name == "file_search":
                 fs_kwargs: Dict[str, Any] = {}
                 if built_in_tool_configs:
@@ -143,9 +135,7 @@ class GeminiProvider(BaseProvider):
                                 fs_kwargs["file_search_store_names"] = names
                             if "top_k" in cfg:
                                 fs_kwargs["top_k"] = cfg["top_k"]
-                result.append(
-                    genai_types.Tool(file_search=genai_types.FileSearch(**fs_kwargs))
-                )
+                result.append(genai_types.Tool(file_search=genai_types.FileSearch(**fs_kwargs)))
 
         if mcp_servers:
             mcp_list = []
@@ -452,24 +442,31 @@ def _convert_user_content_parts(parts: List[Any]) -> List[genai_types.Part]:
                     media_type, _, encoded = url.partition(";base64,")
                     media_type = media_type.replace("data:", "")
                     import base64
-                    result.append(genai_types.Part(
-                        inline_data=genai_types.Blob(
-                            data=base64.b64decode(encoded),
-                            mime_type=media_type,
+
+                    result.append(
+                        genai_types.Part(
+                            inline_data=genai_types.Blob(
+                                data=base64.b64decode(encoded),
+                                mime_type=media_type,
+                            )
                         )
-                    ))
+                    )
                 else:
-                    result.append(genai_types.Part(
-                        file_data=genai_types.FileData(file_uri=url, mime_type="image/*")
-                    ))
+                    result.append(
+                        genai_types.Part(
+                            file_data=genai_types.FileData(file_uri=url, mime_type="image/*")
+                        )
+                    )
             elif ptype == "file":
                 file_info = part.get("file", {})
-                result.append(genai_types.Part(
-                    file_data=genai_types.FileData(
-                        file_uri=file_info.get("uri", ""),
-                        mime_type=file_info.get("mime_type", ""),
+                result.append(
+                    genai_types.Part(
+                        file_data=genai_types.FileData(
+                            file_uri=file_info.get("uri", ""),
+                            mime_type=file_info.get("mime_type", ""),
+                        )
                     )
-                ))
+                )
     return result
 
 
@@ -493,10 +490,12 @@ def _extract_grounding_metadata(resp: Any) -> Optional[Dict[str, Any]]:
         for gc in chunks:
             web = getattr(gc, "web", None)
             if web:
-                chunk_list.append({
-                    "uri": getattr(web, "uri", ""),
-                    "title": getattr(web, "title", ""),
-                })
+                chunk_list.append(
+                    {
+                        "uri": getattr(web, "uri", ""),
+                        "title": getattr(web, "title", ""),
+                    }
+                )
         if chunk_list:
             result["grounding_chunks"] = chunk_list
 
@@ -505,11 +504,13 @@ def _extract_grounding_metadata(resp: Any) -> Optional[Dict[str, Any]]:
         support_list = []
         for gs in supports:
             segment = getattr(gs, "segment", None)
-            support_list.append({
-                "text": getattr(segment, "text", "") if segment else "",
-                "confidence_scores": list(getattr(gs, "confidence_scores", [])),
-                "grounding_chunk_indices": list(getattr(gs, "grounding_chunk_indices", [])),
-            })
+            support_list.append(
+                {
+                    "text": getattr(segment, "text", "") if segment else "",
+                    "confidence_scores": list(getattr(gs, "confidence_scores", [])),
+                    "grounding_chunk_indices": list(getattr(gs, "grounding_chunk_indices", [])),
+                }
+            )
         if support_list:
             result["grounding_supports"] = support_list
 

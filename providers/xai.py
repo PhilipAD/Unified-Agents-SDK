@@ -18,16 +18,18 @@ from providers.base import BaseProvider
 
 XAI_BASE_URL = "https://api.x.ai/v1"
 
-BUILT_IN_TOOL_TYPES = frozenset({
-    "web_search",
-    "x_search",
-    "code_interpreter",
-    "code_execution",
-    "file_search",
-    "collections_search",
-    "attachment_search",
-    "mcp",
-})
+BUILT_IN_TOOL_TYPES = frozenset(
+    {
+        "web_search",
+        "x_search",
+        "code_interpreter",
+        "code_execution",
+        "file_search",
+        "collections_search",
+        "attachment_search",
+        "mcp",
+    }
+)
 
 
 def _to_input_items(
@@ -50,27 +52,33 @@ def _to_input_items(
 
         elif m.role == Role.ASSISTANT:
             if m.content:
-                items.append({
-                    "type": "message",
-                    "role": "assistant",
-                    "content": [
-                        {"type": "output_text", "text": m.content},
-                    ],
-                })
+                items.append(
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [
+                            {"type": "output_text", "text": m.content},
+                        ],
+                    }
+                )
             for tc in m.tool_calls:
-                items.append({
-                    "type": "function_call",
-                    "call_id": tc.id,
-                    "name": tc.name,
-                    "arguments": json.dumps(tc.arguments),
-                })
+                items.append(
+                    {
+                        "type": "function_call",
+                        "call_id": tc.id,
+                        "name": tc.name,
+                        "arguments": json.dumps(tc.arguments),
+                    }
+                )
 
         elif m.role == Role.TOOL:
-            items.append({
-                "type": "function_call_output",
-                "call_id": m.tool_call_id or "",
-                "output": m.content,
-            })
+            items.append(
+                {
+                    "type": "function_call_output",
+                    "call_id": m.tool_call_id or "",
+                    "output": m.content,
+                }
+            )
 
     return instructions, items
 
@@ -85,13 +93,15 @@ def _to_tools(
 
     if tools:
         for t in tools:
-            result.append({
-                "type": "function",
-                "name": t.name,
-                "description": t.description,
-                "parameters": t.json_schema,
-                "strict": False,
-            })
+            result.append(
+                {
+                    "type": "function",
+                    "name": t.name,
+                    "description": t.description,
+                    "parameters": t.json_schema,
+                    "strict": False,
+                }
+            )
 
     if built_in_tools:
         for bt in built_in_tools:
@@ -153,7 +163,8 @@ class XAIProvider(BaseProvider):
         mcp_servers = kwargs.pop("mcp_servers", None)
         reasoning_effort = kwargs.pop("reasoning_effort", None)
         previous_response_id = kwargs.pop(
-            "previous_response_id", None,
+            "previous_response_id",
+            None,
         )
         store = kwargs.pop("store", None)
         search_parameters = kwargs.pop("search_parameters", None)
@@ -217,30 +228,34 @@ class XAIProvider(BaseProvider):
                         annotations = getattr(part, "annotations", None)
                         if annotations:
                             for ann in annotations:
-                                citations.append({
-                                    "type": getattr(ann, "type", ""),
-                                    "url": getattr(ann, "url", ""),
-                                    "title": getattr(ann, "title", ""),
-                                    "start_index": getattr(
-                                        ann, "start_index", 0,
-                                    ),
-                                    "end_index": getattr(
-                                        ann, "end_index", 0,
-                                    ),
-                                })
+                                citations.append(
+                                    {
+                                        "type": getattr(ann, "type", ""),
+                                        "url": getattr(ann, "url", ""),
+                                        "title": getattr(ann, "title", ""),
+                                        "start_index": getattr(
+                                            ann,
+                                            "start_index",
+                                            0,
+                                        ),
+                                        "end_index": getattr(
+                                            ann,
+                                            "end_index",
+                                            0,
+                                        ),
+                                    }
+                                )
 
             elif item_type == "function_call":
                 args_raw = getattr(item, "arguments", "{}")
-                arguments = (
-                    json.loads(args_raw)
-                    if isinstance(args_raw, str)
-                    else args_raw
+                arguments = json.loads(args_raw) if isinstance(args_raw, str) else args_raw
+                tool_calls.append(
+                    ToolCall(
+                        id=getattr(item, "call_id", ""),
+                        name=item.name,
+                        arguments=arguments,
+                    )
                 )
-                tool_calls.append(ToolCall(
-                    id=getattr(item, "call_id", ""),
-                    name=item.name,
-                    arguments=arguments,
-                ))
 
             elif item_type == "reasoning":
                 for part in getattr(item, "summary", []) or []:
@@ -258,13 +273,19 @@ class XAIProvider(BaseProvider):
         raw_usage = getattr(resp, "usage", None)
         if raw_usage:
             usage["input_tokens"] = getattr(
-                raw_usage, "input_tokens", 0,
+                raw_usage,
+                "input_tokens",
+                0,
             )
             usage["output_tokens"] = getattr(
-                raw_usage, "output_tokens", 0,
+                raw_usage,
+                "output_tokens",
+                0,
             )
             usage["total_tokens"] = getattr(
-                raw_usage, "total_tokens", 0,
+                raw_usage,
+                "total_tokens",
+                0,
             )
             input_det = getattr(raw_usage, "input_tokens_details", None)
             if input_det:
@@ -272,7 +293,9 @@ class XAIProvider(BaseProvider):
                 if cached:
                     usage["cached_tokens"] = cached
             output_det = getattr(
-                raw_usage, "output_tokens_details", None,
+                raw_usage,
+                "output_tokens_details",
+                None,
             )
             if output_det:
                 reasoning = getattr(output_det, "reasoning_tokens", 0)
@@ -310,7 +333,8 @@ class XAIProvider(BaseProvider):
         mcp_servers = kwargs.pop("mcp_servers", None)
         reasoning_effort = kwargs.pop("reasoning_effort", None)
         previous_response_id = kwargs.pop(
-            "previous_response_id", None,
+            "previous_response_id",
+            None,
         )
         store = kwargs.pop("store", None)
         search_parameters = kwargs.pop("search_parameters", None)
@@ -356,7 +380,8 @@ class XAIProvider(BaseProvider):
 
                     if event_type == "response.output_text.delta":
                         yield StreamEvent(
-                            type="chunk", delta=event.delta,
+                            type="chunk",
+                            delta=event.delta,
                         )
 
                     elif event_type in (
@@ -364,24 +389,20 @@ class XAIProvider(BaseProvider):
                         "response.reasoning_text.delta",
                     ):
                         yield StreamEvent(
-                            type="chunk", delta=event.delta,
+                            type="chunk",
+                            delta=event.delta,
                         )
 
-                    elif event_type == (
-                        "response.function_call_arguments.done"
-                    ):
-                        args = (
-                            json.loads(event.arguments)
-                            if event.arguments
-                            else {}
-                        )
+                    elif event_type == ("response.function_call_arguments.done"):
+                        args = json.loads(event.arguments) if event.arguments else {}
                         tc = ToolCall(
                             id=getattr(event, "call_id", ""),
                             name=getattr(event, "name", ""),
                             arguments=args,
                         )
                         yield StreamEvent(
-                            type="tool_call", tool_call=tc,
+                            type="tool_call",
+                            tool_call=tc,
                         )
 
                     elif event_type in (
@@ -400,17 +421,24 @@ class XAIProvider(BaseProvider):
                             if raw_usage:
                                 usage: Dict[str, Any] = {
                                     "input_tokens": getattr(
-                                        raw_usage, "input_tokens", 0,
+                                        raw_usage,
+                                        "input_tokens",
+                                        0,
                                     ),
                                     "output_tokens": getattr(
-                                        raw_usage, "output_tokens", 0,
+                                        raw_usage,
+                                        "output_tokens",
+                                        0,
                                     ),
                                     "total_tokens": getattr(
-                                        raw_usage, "total_tokens", 0,
+                                        raw_usage,
+                                        "total_tokens",
+                                        0,
                                     ),
                                 }
                                 yield StreamEvent(
-                                    type="usage", usage=usage,
+                                    type="usage",
+                                    usage=usage,
                                 )
 
         except Exception as exc:

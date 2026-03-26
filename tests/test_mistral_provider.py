@@ -36,7 +36,9 @@ def test_to_mistral_messages_assistant_with_tool_calls():
     tc = ToolCall(id="tc-1", name="fn", arguments={"a": 1})
     msgs = [
         NormalizedMessage(
-            role=Role.ASSISTANT, content="calling", tool_calls=[tc],
+            role=Role.ASSISTANT,
+            content="calling",
+            tool_calls=[tc],
         ),
     ]
     result = _to_mistral_messages(msgs)

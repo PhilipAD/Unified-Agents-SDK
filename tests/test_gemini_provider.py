@@ -51,9 +51,7 @@ def test_build_contents_assistant_with_tool_calls():
 def test_build_contents_tool_response():
     p = _provider()
     msgs = [
-        NormalizedMessage(
-            role=Role.TOOL, content="result", tool_call_id="tc-1", name="search"
-        ),
+        NormalizedMessage(role=Role.TOOL, content="result", tool_call_id="tc-1", name="search"),
     ]
     contents = p._build_contents(msgs)
     assert len(contents) == 1

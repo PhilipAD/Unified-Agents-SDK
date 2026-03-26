@@ -160,9 +160,9 @@ def test_convert_user_content_parts_text_dict():
 
 
 def test_convert_user_content_parts_text_with_cache_control():
-    result = _convert_user_content_parts([
-        {"type": "text", "text": "cached text", "cache_control": {"type": "ephemeral"}}
-    ])
+    result = _convert_user_content_parts(
+        [{"type": "text", "text": "cached text", "cache_control": {"type": "ephemeral"}}]
+    )
     assert result[0]["cache_control"] == {"type": "ephemeral"}
 
 

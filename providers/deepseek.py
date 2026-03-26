@@ -53,7 +53,8 @@ class DeepSeekProvider(OpenAICompatibleProvider):
         return msg
 
     def _normalize_thinking_param(
-        self, thinking: Any,
+        self,
+        thinking: Any,
     ) -> Optional[Dict[str, str]]:
         """Convert convenience thinking values to the API format."""
         if thinking is None:
@@ -91,13 +92,14 @@ class DeepSeekProvider(OpenAICompatibleProvider):
         async with httpx.AsyncClient(timeout=timeout) as client:
             try:
                 resp = await client.post(
-                    url, headers=headers, json=payload,
+                    url,
+                    headers=headers,
+                    json=payload,
                 )
                 resp.raise_for_status()
             except httpx.HTTPStatusError as exc:
                 raise GatewayError(
-                    f"DeepSeek API error {exc.response.status_code}: "
-                    f"{exc.response.text}",
+                    f"DeepSeek API error {exc.response.status_code}: {exc.response.text}",
                     provider=self.name,
                     status_code=exc.response.status_code,
                 ) from exc
@@ -109,11 +111,7 @@ class DeepSeekProvider(OpenAICompatibleProvider):
         reasoning_content = msg.get("reasoning_content")
         finish_reason = choice.get("finish_reason")
 
-        tool_calls = (
-            self._parse_tool_calls(msg["tool_calls"])
-            if "tool_calls" in msg
-            else []
-        )
+        tool_calls = self._parse_tool_calls(msg["tool_calls"]) if "tool_calls" in msg else []
 
         out_msg = NormalizedMessage(
             role=Role.ASSISTANT,
@@ -126,13 +124,16 @@ class DeepSeekProvider(OpenAICompatibleProvider):
         normalized_usage: Dict[str, Any] = {}
         if usage:
             normalized_usage["input_tokens"] = usage.get(
-                "prompt_tokens", 0,
+                "prompt_tokens",
+                0,
             )
             normalized_usage["output_tokens"] = usage.get(
-                "completion_tokens", 0,
+                "completion_tokens",
+                0,
             )
             normalized_usage["total_tokens"] = usage.get(
-                "total_tokens", 0,
+                "total_tokens",
+                0,
             )
             if "completion_tokens_details" in usage:
                 details = usage["completion_tokens_details"]
@@ -140,11 +141,10 @@ class DeepSeekProvider(OpenAICompatibleProvider):
                 if reasoning_tokens is not None:
                     normalized_usage["reasoning_tokens"] = reasoning_tokens
             if "prompt_cache_hit_tokens" in usage:
-                normalized_usage["cache_hit_tokens"] = usage[
-                    "prompt_cache_hit_tokens"
-                ]
+                normalized_usage["cache_hit_tokens"] = usage["prompt_cache_hit_tokens"]
                 normalized_usage["cache_miss_tokens"] = usage.get(
-                    "prompt_cache_miss_tokens", 0,
+                    "prompt_cache_miss_tokens",
+                    0,
                 )
         if finish_reason:
             normalized_usage["finish_reason"] = finish_reason
@@ -172,7 +172,10 @@ class DeepSeekProvider(OpenAICompatibleProvider):
             "Accept": "text/event-stream",
         }
         payload = self._build_payload(
-            messages, tools, stream=True, **kwargs,
+            messages,
+            tools,
+            stream=True,
+            **kwargs,
         )
 
         thinking_param = self._normalize_thinking_param(thinking_mode)
@@ -187,13 +190,16 @@ class DeepSeekProvider(OpenAICompatibleProvider):
         async with httpx.AsyncClient(timeout=None) as client:
             try:
                 async with client.stream(
-                    "POST", url, headers=headers, json=payload,
+                    "POST",
+                    url,
+                    headers=headers,
+                    json=payload,
                 ) as resp:
                     resp.raise_for_status()
                     async for line in resp.aiter_lines():
                         if not line or not line.startswith("data:"):
                             continue
-                        chunk_str = line[len("data:"):].strip()
+                        chunk_str = line[len("data:") :].strip()
                         if chunk_str == "[DONE]":
                             break
 
@@ -201,11 +207,7 @@ class DeepSeekProvider(OpenAICompatibleProvider):
                         if "usage" in chunk and chunk["usage"]:
                             raw_usage = chunk["usage"]
 
-                        choice = (
-                            chunk["choices"][0]
-                            if chunk.get("choices")
-                            else None
-                        )
+                        choice = chunk["choices"][0] if chunk.get("choices") else None
                         if not choice:
                             continue
                         delta = choice.get("delta", {})
@@ -218,7 +220,8 @@ class DeepSeekProvider(OpenAICompatibleProvider):
 
                         if delta.get("content"):
                             yield StreamEvent(
-                                type="chunk", delta=delta["content"],
+                                type="chunk",
+                                delta=delta["content"],
                             )
 
                         if "tool_calls" in delta:
@@ -243,25 +246,21 @@ class DeepSeekProvider(OpenAICompatibleProvider):
                         if finish == "tool_calls":
                             for _idx in sorted(pending_tool_calls):
                                 e = pending_tool_calls[_idx]
-                                args = (
-                                    json.loads(e["arguments"])
-                                    if e["arguments"]
-                                    else {}
-                                )
+                                args = json.loads(e["arguments"]) if e["arguments"] else {}
                                 tc = ToolCall(
                                     id=e["id"],
                                     name=e["name"],
                                     arguments=args,
                                 )
                                 yield StreamEvent(
-                                    type="tool_call", tool_call=tc,
+                                    type="tool_call",
+                                    tool_call=tc,
                                 )
                             pending_tool_calls.clear()
 
             except httpx.HTTPStatusError as exc:
                 raise GatewayError(
-                    f"DeepSeek streaming error "
-                    f"{exc.response.status_code}",
+                    f"DeepSeek streaming error {exc.response.status_code}",
                     provider=self.name,
                     status_code=exc.response.status_code,
                 ) from exc
@@ -278,11 +277,10 @@ class DeepSeekProvider(OpenAICompatibleProvider):
                 if rt is not None:
                     normalized["reasoning_tokens"] = rt
             if "prompt_cache_hit_tokens" in raw_usage:
-                normalized["cache_hit_tokens"] = raw_usage[
-                    "prompt_cache_hit_tokens"
-                ]
+                normalized["cache_hit_tokens"] = raw_usage["prompt_cache_hit_tokens"]
                 normalized["cache_miss_tokens"] = raw_usage.get(
-                    "prompt_cache_miss_tokens", 0,
+                    "prompt_cache_miss_tokens",
+                    0,
                 )
             yield StreamEvent(type="usage", usage=normalized)
         yield StreamEvent(type="done")

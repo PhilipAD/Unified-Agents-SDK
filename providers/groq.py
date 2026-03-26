@@ -25,11 +25,13 @@ ROLE_MAP = {
 
 COMPOUND_MODELS = frozenset({"compound-beta", "compound-beta-mini"})
 
-VALID_BUILTIN_TOOLS = frozenset({
-    "web_search",
-    "code_interpreter",
-    "browser_search",
-})
+VALID_BUILTIN_TOOLS = frozenset(
+    {
+        "web_search",
+        "code_interpreter",
+        "browser_search",
+    }
+)
 
 
 class GroqProvider(BaseProvider):
@@ -144,9 +146,7 @@ class GroqProvider(BaseProvider):
         payload = self._build_payload(messages, tools, **kwargs)
 
         if self._is_compound() and enabled_tools:
-            compound_custom: Dict[str, Any] = {
-                "tools": {"enabled_tools": enabled_tools}
-            }
+            compound_custom: Dict[str, Any] = {"tools": {"enabled_tools": enabled_tools}}
             if wolfram_settings:
                 compound_custom["tools"]["wolfram_settings"] = wolfram_settings
             if compound_models:
@@ -233,10 +233,14 @@ class GroqProvider(BaseProvider):
                     {
                         "model": getattr(m, "model", ""),
                         "prompt_tokens": getattr(
-                            getattr(m, "usage", None), "prompt_tokens", 0,
+                            getattr(m, "usage", None),
+                            "prompt_tokens",
+                            0,
                         ),
                         "completion_tokens": getattr(
-                            getattr(m, "usage", None), "completion_tokens", 0,
+                            getattr(m, "usage", None),
+                            "completion_tokens",
+                            0,
                         ),
                     }
                     for m in models
@@ -307,13 +311,15 @@ class GroqProvider(BaseProvider):
         api_tools: List[Dict[str, Any]] = []
         if tools:
             for t in tools:
-                api_tools.append({
-                    "type": "function",
-                    "name": t.name,
-                    "description": t.description,
-                    "parameters": t.json_schema,
-                    "strict": False,
-                })
+                api_tools.append(
+                    {
+                        "type": "function",
+                        "name": t.name,
+                        "description": t.description,
+                        "parameters": t.json_schema,
+                        "strict": False,
+                    }
+                )
 
         for mcp in mcp_servers:
             entry: Dict[str, Any] = {
@@ -359,11 +365,13 @@ class GroqProvider(BaseProvider):
             elif item_type == "function_call":
                 args_raw = getattr(item, "arguments", "{}")
                 arguments = json.loads(args_raw) if isinstance(args_raw, str) else args_raw
-                tool_calls.append(ToolCall(
-                    id=getattr(item, "call_id", ""),
-                    name=item.name,
-                    arguments=arguments,
-                ))
+                tool_calls.append(
+                    ToolCall(
+                        id=getattr(item, "call_id", ""),
+                        name=item.name,
+                        arguments=arguments,
+                    )
+                )
 
         out_msg = NormalizedMessage(
             role=Role.ASSISTANT,
@@ -410,9 +418,7 @@ class GroqProvider(BaseProvider):
         payload = self._build_payload(messages, tools, stream=True, **kwargs)
 
         if self._is_compound() and enabled_tools:
-            compound_custom: Dict[str, Any] = {
-                "tools": {"enabled_tools": enabled_tools}
-            }
+            compound_custom: Dict[str, Any] = {"tools": {"enabled_tools": enabled_tools}}
             if wolfram_settings:
                 compound_custom["tools"]["wolfram_settings"] = wolfram_settings
             if compound_models:
@@ -455,8 +461,10 @@ class GroqProvider(BaseProvider):
                             "output_tokens": chunk.usage.completion_tokens or 0,
                         }
                         timing_fields = (
-                            "completion_time", "prompt_time",
-                            "queue_time", "total_time",
+                            "completion_time",
+                            "prompt_time",
+                            "queue_time",
+                            "total_time",
                         )
                         for timing_field in timing_fields:
                             val = getattr(chunk.usage, timing_field, None)

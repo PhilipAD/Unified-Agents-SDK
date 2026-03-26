@@ -40,7 +40,9 @@ def test_to_input_items_assistant_with_function_call():
     tc = ToolCall(id="call-1", name="search", arguments={"q": "test"})
     msgs = [
         NormalizedMessage(
-            role=Role.ASSISTANT, content="searching", tool_calls=[tc],
+            role=Role.ASSISTANT,
+            content="searching",
+            tool_calls=[tc],
         ),
     ]
     _, items = _to_input_items(msgs)
@@ -53,7 +55,9 @@ def test_to_input_items_assistant_with_function_call():
 def test_to_input_items_tool_output():
     msgs = [
         NormalizedMessage(
-            role=Role.TOOL, content="result", tool_call_id="call-1",
+            role=Role.TOOL,
+            content="result",
+            tool_call_id="call-1",
         ),
     ]
     _, items = _to_input_items(msgs)
