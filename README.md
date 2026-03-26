@@ -36,42 +36,72 @@
 
 Every LLM provider speaks a different dialect. Tool calling, streaming, context — all incompatible. You end up writing provider-specific glue code everywhere.
 
-**Unified Agent Gateway solves it once:**
+**Unified Agent Gateway solves it once. Three ways to use it:**
 
 <table>
 <tr>
 <td width="50%">
 
-### Before
+### Before — provider-specific glue everywhere
+
 ```python
-# OpenAI-specific glue
-client.chat.completions.create(
+# Different tool schema for every provider
+openai_client.chat.completions.create(
     model="gpt-4o",
-    tools=[{"type": "function", "function": {...}}],
-    ...
+    tools=[{"type": "function", "function": {
+        "name": "search", "parameters": {...}
+    }}],
 )
 
-# Anthropic-specific glue
-client.messages.create(
+anthropic_client.messages.create(
     model="claude-opus-4-5",
-    tools=[{"name": ..., "input_schema": {...}}],
-    ...
+    tools=[{"name": "search", "input_schema": {...}}],
 )
+
+groq_client.chat.completions.create(
+    model="llama-3.3-70b-versatile",
+    tools=[{"type": "function", "function": {...}}],
+)
+# ...repeat for every provider, every format change
 ```
 
 </td>
 <td width="50%">
 
-### After
+### After — one interface, any provider
+
+**Mode 1 — CLI** (no server, no code)
 ```bash
-# One call — any provider
+uag chat "Search and summarise" --profile claude
+uag chat "Explain ML" --stream
+uag providers
+```
+
+**Mode 2 — Python** (embed in your app)
+```python
+from runtime.router import create_provider, resolve_provider_config
+from config.settings import ProviderSettings, GatewaySettings
+from core.agent_loop import AgentLoop
+from core.types import NormalizedMessage, Role
+
+cfg = resolve_provider_config(
+    ProviderSettings(), GatewaySettings(), profile="claude"
+)
+loop = AgentLoop(provider=create_provider(cfg))
+response = await loop.run_conversation([
+    NormalizedMessage(role=Role.USER, content="Search and summarise")
+])
+print(response.messages[-1].content)
+```
+
+**Mode 3 — HTTP / REST** (language-agnostic)
+```bash
 curl http://localhost:8000/agent-query \
+  -H "Content-Type: application/json" \
   -d '{
     "input": "Search and summarise",
     "profile": "claude",
-    "runtime": {
-      "mcp_namespaces": ["search"]
-    }
+    "runtime": {"mcp_namespaces": ["search"]}
   }'
 ```
 
