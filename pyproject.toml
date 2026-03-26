@@ -26,11 +26,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
-[project.urls]
-Homepage = "https://github.com/PhilipAD/Unified-Agent-Gateway"
-Repository = "https://github.com/PhilipAD/Unified-Agent-Gateway"
-Documentation = "https://github.com/PhilipAD/Unified-Agent-Gateway#readme"
-Changelog = "https://github.com/PhilipAD/Unified-Agent-Gateway/blob/main/CHANGELOG.md"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
@@ -42,6 +37,12 @@ dependencies = [
     "anyio>=4.0",
     "mcp>=1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/PhilipAD/Unified-Agent-Gateway"
+Repository = "https://github.com/PhilipAD/Unified-Agent-Gateway"
+Documentation = "https://github.com/PhilipAD/Unified-Agent-Gateway#readme"
+Changelog = "https://github.com/PhilipAD/Unified-Agent-Gateway/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
