@@ -40,9 +40,13 @@ class GroqProvider(BaseProvider):
 
     Supports:
     - Standard function calling (all models): OpenAI-compatible chat completions
+    - Vision / multimodal input: pass content as a list of OpenAI-format content
+      blocks (type "text" + "image_url") for vision-capable models (e.g. Llama 4)
     - Compound built-in tools (compound-beta/compound-beta-mini): server-side
       web_search, code_interpreter, browser_search via compound_custom
     - Reasoning models: reasoning/reasoning_format/reasoning_effort/include_reasoning
+    - Prompt caching: automatic prefix caching by GroqCloud; cached_tokens reported
+      in usage (prompt_tokens_details.cached_tokens / x_groq DRAM/SRAM breakdown)
     - Documents: inline text/JSON document context
     - Citations: citation_options with document_citation and function_citation
     - Search settings: country, domains, images
@@ -61,6 +65,12 @@ class GroqProvider(BaseProvider):
         return self.model in COMPOUND_MODELS
 
     def _msg_to_api(self, m: NormalizedMessage) -> Dict[str, Any]:
+        """Convert a NormalizedMessage to the Groq chat-completions message shape.
+
+        When content is a list (multimodal / vision), it is forwarded as-is.
+        Groq accepts the same image content format as OpenAI Chat Completions:
+          [{"type": "text", "text": "..."}, {"type": "image_url", "image_url": {"url": "..."}}]
+        """
         msg: Dict[str, Any] = {
             "role": ROLE_MAP[m.role],
             "content": m.content,

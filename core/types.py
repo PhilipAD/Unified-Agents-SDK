@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 class Role(str, Enum):
@@ -22,7 +22,7 @@ class ToolCall:
 @dataclass
 class NormalizedMessage:
     role: Role
-    content: str
+    content: Union[str, List[Any]]
     tool_calls: List[ToolCall] = field(default_factory=list)
     tool_call_id: Optional[str] = None
     name: Optional[str] = None

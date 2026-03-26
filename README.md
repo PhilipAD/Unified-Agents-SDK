@@ -161,6 +161,15 @@ Same event shape, always.
 
 **Every provider runs the same unified agent runtime** (multi-hop tool loop, shared HTTP API, normalized types). Each column is one **vendor integration** through that runtime—not a comparison of who “has an agent.” Rows below call out **optional vendor-specific surfaces** (built-in tools, how PDFs are passed, Mistral’s separate Agents HTTP API, etc.).
 
+**Legend**
+
+| Symbol | Meaning |
+|--------|--------|
+| ✅ | Supported and wired in this SDK for that column’s adapter. |
+| — | Genuine gap in this SDK for that column, or a real vendor limitation. See [When the matrix shows a dash](#when-the-matrix-shows-a-dash). |
+| †  | Vendor-specific flow — see **Footnotes (†)** below the table. |
+| ‡  | Automatic platform behaviour — no request change needed; see note below the table. |
+
 | Feature | OpenAI | OpenAI Responses | Anthropic | Gemini | Groq | DeepSeek | Mistral | xAI/Grok |
 |---------|:------:|:----------------:|:---------:|:------:|:----:|:--------:|:-------:|:--------:|
 | Sync chat | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -171,18 +180,47 @@ Same event shape, always.
 | MCP tool auto-discovery | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ |
 | Server-side built-in tools | — | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ |
 | Extended thinking / reasoning | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Vision / multimodal input | — | ✅ | ✅ | ✅ | — | — | ✅ | ✅ |
+| Vision / multimodal input | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ |
 | Structured outputs (JSON schema) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Prompt caching | — | ✅ | ✅ | ✅ | — | ✅ | — | ✅ |
-| Citations | — | ✅ | ✅ | — | ✅ | — | — | ✅ |
-| Document / PDF input | — | — | ✅ | ✅† | ✅ | — | ✅ | — |
+| Prompt caching | — | ✅ | ✅ | ✅ | ✅‡ | ✅ | — | ✅ |
+| Citations | — | ✅ | ✅ | ✅† | ✅ | — | — | ✅ |
+| Document / PDF input | — | ✅† | ✅ | ✅† | ✅ | — | ✅ | — |
 | Live web search | — | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ |
 | Mistral Agents API (`agent_id`) | — | — | — | — | — | — | ✅ | — |
 | Inline BYOK credentials | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-**† Document / PDF (vendor-specific flows):** Paths are not identical across providers. **Gemini:** upload with the [Gemini Files API](https://ai.google.dev/gemini-api/docs/files), then pass the file URI in user message parts (`type: "file"`, `mime_type`, etc.—see `providers/gemini.py`). **Anthropic / Groq / Mistral:** use each provider’s document or file content format in normalized messages. Where this SDK does not yet normalize a single “drop a PDF” shape for a vendor, the cell is **—** even if the upstream API can accept documents through other routes.
+**‡ Groq prompt caching** is automatic (prefix reuse, no request change needed). `cached_tokens` is reported in the usage response via `prompt_tokens_details` and `x_groq` DRAM/SRAM breakdown.
 
-**Mistral Agents API (`agent_id`):** This row is **only** [Mistral’s separate Agents HTTP API](https://docs.mistral.ai/agents/agents)—optional `agent_id` routing to `agents.complete` / server-defined agents and built-in tools. **All other providers** still run full agent loops through their own chat or Responses-style APIs; they do not expose Mistral’s branded Agents API, which is why the column is empty outside Mistral.
+**Mistral Agents API (`agent_id`):** This row is **only** [Mistral's separate Agents HTTP API](https://docs.mistral.ai/agents/agents)—optional `agent_id` routing to `agents.complete` / server-defined agents and built-in tools. **All other providers** still run full agent loops through their own chat or Responses-style APIs; they do not expose Mistral's branded Agents API, which is why the column is empty outside Mistral.
+
+### Footnotes (†)
+
+**Citations · Gemini (✅†):** [Grounding with Google Search](https://ai.google.dev/gemini-api/docs/google-search) returns `grounding_metadata` (web chunks, queries, support references). This SDK extracts and surfaces it in the `usage` response key `grounding_metadata` — see `providers/gemini.py`. It is citation-like grounding, not an inline text-annotation object like Anthropic's.
+
+**Document / PDF · Gemini (✅†):** Upload files with the [Gemini Files API](https://ai.google.dev/gemini-api/docs/files), then include the file URI in user message parts (`type: "file"`, `uri`, `mime_type`) — see `_convert_user_content_parts` in `providers/gemini.py`.
+
+**Document / PDF · OpenAI Responses (✅†):** Pass `{"type": "file_search", "vector_store_ids": [...]}` in `built_in_tools`. This SDK wires it through `_to_tools` in `providers/openai_responses.py`. See OpenAI's [file inputs guide](https://developers.openai.com/api/docs/guides/file-inputs?api-mode=responses) for creating files and passing them inline.
+
+### When the matrix shows a dash
+
+Every **—** is a genuine gap in **this SDK** or a real vendor limitation.
+
+| Row · column | Reason |
+|--------------|--------|
+| **MCP · Mistral** | Mistral [supports MCP](https://docs.mistral.ai/agents/tools/mcp) via `RunContext` + Agents SDK — a different API pattern. This gateway has not yet bridged it to the unified `MCP_SERVERS` / `mcp_namespaces` path. |
+| **Server-side built-in tools · OpenAI** | Hosted tools require the **Responses API**. The `openai_compatible` column is generic Chat Completions — bring your own function tools. |
+| **Server-side built-in tools · DeepSeek** | DeepSeek has no hosted tool service. All tools are user-supplied via function calling. |
+| **Extended thinking · OpenAI** | Reasoning parameters are wired only in the **OpenAI Responses** adapter. The generic `openai_compatible` column does not map them (though extra kwargs are forwarded). |
+| **Vision · DeepSeek** | The official [DeepSeek API](https://api-docs.deepseek.com/) (`deepseek-chat`, `deepseek-reasoner`) does not support image input. DeepSeek VL is a separate product. |
+| **Prompt caching · OpenAI** | The `openai_compatible` adapter is generic Chat Completions. OpenAI's server-side prefix cache is implicit; no explicit cache-control API on this path. |
+| **Prompt caching · Mistral** | Mistral has no documented explicit prompt-cache API. |
+| **Citations · OpenAI** | Inline `url_citation` annotations require **Responses + web search tool**. Generic Chat Completions returns no citation annotation objects. |
+| **Citations · DeepSeek / Mistral** | Neither API returns structured citation annotation objects. |
+| **Document / PDF · OpenAI** | The generic `openai_compatible` Chat Completions path has no native document block. Use the `openai_responses` column with `file_search` (see † above). |
+| **Document / PDF · DeepSeek** | DeepSeek's chat API has no native document or PDF block. |
+| **Document / PDF · xAI** | xAI Grok has no documented inline file/PDF input on the Responses path used by this SDK. |
+| **Live web search · OpenAI** | Hosted web search requires the **Responses API**. Generic Chat Completions uses function tools you supply. |
+| **Live web search · DeepSeek** | No hosted search tool; implement search as a custom function. |
 
 ---
 

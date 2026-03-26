@@ -28,7 +28,13 @@ class OpenAICompatibleProvider(BaseProvider):
     name = "openai_compatible"
 
     def _msg_to_api(self, m: NormalizedMessage) -> Dict[str, Any]:
-        """Convert a NormalizedMessage to the OpenAI chat-completions message shape."""
+        """Convert a NormalizedMessage to the OpenAI chat-completions message shape.
+
+        When content is a list (multimodal / vision), it is forwarded as-is.
+        OpenAI Chat Completions accepts content blocks in the form:
+          [{"type": "text", "text": "..."}, {"type": "image_url", "image_url": {"url": "..."}}]
+        Any OpenAI-compatible endpoint that supports vision uses the same shape.
+        """
         msg: Dict[str, Any] = {
             "role": ROLE_MAP[m.role],
             "content": m.content,
