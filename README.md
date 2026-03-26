@@ -161,6 +161,8 @@ Same event shape, always.
 
 **Every provider runs the same unified agent runtime** (multi-hop tool loop, shared HTTP API, normalized types). Each column is one **vendor integration** through that runtime—not a comparison of who “has an agent.” Rows below call out **optional vendor-specific surfaces** (built-in tools, how PDFs are passed, Mistral’s separate Agents HTTP API, etc.).
 
+> **Using OpenAI?** Use the **OpenAI Responses** column (`openai_responses` adapter / `"openai-r"` profile). OpenAI’s [Responses API](https://developers.openai.com/api/docs/guides/migrate-to-responses) is a superset of Chat Completions and is recommended for all new projects—it adds built-in tools, MCP, stateful context, and better reasoning. The **OAI-compat¹** column is the *generic* adapter for third-party OpenAI-compatible endpoints (Together AI, Ollama, Azure OpenAI, local models, etc.) that do not expose the Responses API.
+
 **Legend**
 
 | Symbol | Meaning |
@@ -170,8 +172,8 @@ Same event shape, always.
 | †  | Vendor-specific flow — see **Footnotes (†)** below the table. |
 | ‡  | Automatic platform behaviour — no request change needed; see note below the table. |
 
-| Feature | OpenAI | OpenAI Responses | Anthropic | Gemini | Groq | DeepSeek | Mistral | xAI/Grok |
-|---------|:------:|:----------------:|:---------:|:------:|:----:|:--------:|:-------:|:--------:|
+| Feature | OAI-compat¹ | OpenAI Responses | Anthropic | Gemini | Groq | DeepSeek | Mistral | xAI/Grok |
+|---------|:----------:|:----------------:|:---------:|:------:|:----:|:--------:|:-------:|:--------:|
 | Sync chat | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | SSE streaming | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Tool / function calling | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -188,6 +190,8 @@ Same event shape, always.
 | Live web search | — | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ |
 | Mistral Agents API (`agent_id`) | — | — | — | — | — | — | ✅ | — |
 | Inline BYOK credentials | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+**¹ OAI-compat** = `openai_compatible` adapter—the generic Chat Completions path for any OpenAI-format endpoint (Together AI, Ollama, Azure OpenAI, local models, etc.). For OpenAI itself, use the **OpenAI Responses** column.
 
 **‡ Groq prompt caching** is automatic (prefix reuse, no request change needed). `cached_tokens` is reported in the usage response via `prompt_tokens_details` and `x_groq` DRAM/SRAM breakdown.
 
