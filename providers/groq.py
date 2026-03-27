@@ -14,14 +14,8 @@ from core.types import (
     ToolCall,
     ToolDefinition,
 )
+from providers._shared import CHAT_ROLE_MAP, build_openai_chat_tools
 from providers.base import BaseProvider
-
-ROLE_MAP = {
-    Role.SYSTEM: "system",
-    Role.USER: "user",
-    Role.ASSISTANT: "assistant",
-    Role.TOOL: "tool",
-}
 
 COMPOUND_MODELS = frozenset({"compound-beta", "compound-beta-mini"})
 
@@ -67,32 +61,13 @@ class GroqProvider(BaseProvider):
     def _msg_to_api(self, m: NormalizedMessage) -> Dict[str, Any]:
         """Convert a NormalizedMessage to the Groq chat-completions message shape.
 
-        When content is a list (multimodal / vision), it is forwarded as-is.
-        Groq accepts the same image content format as OpenAI Chat Completions:
-          [{"type": "text", "text": "..."}, {"type": "image_url", "image_url": {"url": "..."}}]
+        Content lists (multimodal / vision) are forwarded as-is using the same
+        ``[{"type": "image_url", ...}]`` format as OpenAI Chat Completions.
+        ``thinking_content`` is added as ``reasoning`` for Groq reasoning models.
         """
-        msg: Dict[str, Any] = {
-            "role": ROLE_MAP[m.role],
-            "content": m.content,
-        }
-        if m.role == Role.ASSISTANT and m.tool_calls:
-            msg["tool_calls"] = [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {
-                        "name": tc.name,
-                        "arguments": json.dumps(tc.arguments),
-                    },
-                }
-                for tc in m.tool_calls
-            ]
-        if m.role == Role.ASSISTANT and m.thinking_content:
-            msg["reasoning"] = m.thinking_content
-        if m.role == Role.TOOL and m.tool_call_id:
-            msg["tool_call_id"] = m.tool_call_id
-        if m.name:
-            msg["name"] = m.name
+        from providers._shared import msg_to_openai_chat
+
+        msg = msg_to_openai_chat(m, include_reasoning=True)
         return msg
 
     def _build_payload(
@@ -106,18 +81,9 @@ class GroqProvider(BaseProvider):
             "messages": [self._msg_to_api(m) for m in messages],
             **options,
         }
-        if tools:
-            payload["tools"] = [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.json_schema,
-                    },
-                }
-                for t in tools
-            ]
+        tool_list = build_openai_chat_tools(tools)
+        if tool_list:
+            payload["tools"] = tool_list
         return payload
 
     @staticmethod
@@ -316,7 +282,7 @@ class GroqProvider(BaseProvider):
             if m.role == Role.SYSTEM:
                 instructions = m.content
                 continue
-            input_items.append({"role": ROLE_MAP[m.role], "content": m.content})
+            input_items.append({"role": CHAT_ROLE_MAP[m.role], "content": m.content})
 
         api_tools: List[Dict[str, Any]] = []
         if tools:

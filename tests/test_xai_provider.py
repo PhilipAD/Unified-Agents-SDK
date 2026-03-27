@@ -1,11 +1,7 @@
 from core.types import NormalizedMessage, Role, ToolCall, ToolDefinition
-from providers.xai import (
-    BUILT_IN_TOOL_TYPES,
-    XAI_BASE_URL,
-    XAIProvider,
-    _to_input_items,
-    _to_tools,
-)
+from providers._shared import to_responses_input_items as _to_input_items
+from providers._shared import to_responses_tools as _to_tools
+from providers.xai import BUILT_IN_TOOL_TYPES, XAI_BASE_URL, XAIProvider
 
 
 def _provider(**kw):

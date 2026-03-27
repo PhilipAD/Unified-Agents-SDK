@@ -14,16 +14,10 @@ from core.types import (
     ToolCall,
     ToolDefinition,
 )
+from providers._shared import msg_to_openai_chat, normalize_openai_usage
 from providers.openai_compatible import OpenAICompatibleProvider
 
 DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
-
-ROLE_MAP = {
-    Role.SYSTEM: "system",
-    Role.USER: "user",
-    Role.ASSISTANT: "assistant",
-    Role.TOOL: "tool",
-}
 
 
 class DeepSeekProvider(OpenAICompatibleProvider):
@@ -47,7 +41,7 @@ class DeepSeekProvider(OpenAICompatibleProvider):
         return (self.base_url or DEEPSEEK_BASE_URL).rstrip("/")
 
     def _msg_to_api(self, m: NormalizedMessage) -> Dict[str, Any]:
-        msg = super()._msg_to_api(m)
+        msg = msg_to_openai_chat(m)
         if m.role == Role.ASSISTANT and m.thinking_content:
             msg["reasoning_content"] = m.thinking_content
         return msg
@@ -120,32 +114,7 @@ class DeepSeekProvider(OpenAICompatibleProvider):
             thinking_content=reasoning_content,
         )
 
-        usage = data.get("usage") or {}
-        normalized_usage: Dict[str, Any] = {}
-        if usage:
-            normalized_usage["input_tokens"] = usage.get(
-                "prompt_tokens",
-                0,
-            )
-            normalized_usage["output_tokens"] = usage.get(
-                "completion_tokens",
-                0,
-            )
-            normalized_usage["total_tokens"] = usage.get(
-                "total_tokens",
-                0,
-            )
-            if "completion_tokens_details" in usage:
-                details = usage["completion_tokens_details"]
-                reasoning_tokens = details.get("reasoning_tokens")
-                if reasoning_tokens is not None:
-                    normalized_usage["reasoning_tokens"] = reasoning_tokens
-            if "prompt_cache_hit_tokens" in usage:
-                normalized_usage["cache_hit_tokens"] = usage["prompt_cache_hit_tokens"]
-                normalized_usage["cache_miss_tokens"] = usage.get(
-                    "prompt_cache_miss_tokens",
-                    0,
-                )
+        normalized_usage = normalize_openai_usage(data.get("usage") or {})
         if finish_reason:
             normalized_usage["finish_reason"] = finish_reason
 
@@ -266,21 +235,5 @@ class DeepSeekProvider(OpenAICompatibleProvider):
                 ) from exc
 
         if raw_usage:
-            normalized: Dict[str, Any] = {
-                "input_tokens": raw_usage.get("prompt_tokens", 0),
-                "output_tokens": raw_usage.get("completion_tokens", 0),
-                "total_tokens": raw_usage.get("total_tokens", 0),
-            }
-            if "completion_tokens_details" in raw_usage:
-                details = raw_usage["completion_tokens_details"]
-                rt = details.get("reasoning_tokens")
-                if rt is not None:
-                    normalized["reasoning_tokens"] = rt
-            if "prompt_cache_hit_tokens" in raw_usage:
-                normalized["cache_hit_tokens"] = raw_usage["prompt_cache_hit_tokens"]
-                normalized["cache_miss_tokens"] = raw_usage.get(
-                    "prompt_cache_miss_tokens",
-                    0,
-                )
-            yield StreamEvent(type="usage", usage=normalized)
+            yield StreamEvent(type="usage", usage=normalize_openai_usage(raw_usage))
         yield StreamEvent(type="done")

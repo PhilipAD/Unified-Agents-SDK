@@ -186,7 +186,7 @@ class AnthropicProvider(BaseProvider):
         server_tools = kwargs.pop("server_tools", None)
         cache_control = kwargs.pop("cache_control", None)
         output_config = kwargs.pop("output_config", None)
-        citations_config = kwargs.pop("citations", None)
+        kwargs.pop("citations", None)
 
         api_kwargs: Dict[str, Any] = {
             "model": self.model,
@@ -223,14 +223,11 @@ class AnthropicProvider(BaseProvider):
         if output_config:
             api_kwargs["output_config"] = output_config
 
-        if citations_config:
-            for tool_entry in api_kwargs.get("tools", []):
-                if "input_schema" in tool_entry:
-                    pass
-            if isinstance(api_kwargs.get("system"), list):
-                for block in api_kwargs["system"]:
-                    if isinstance(block, dict) and "citations" not in block:
-                        pass
+        # citations_config is intentionally not forwarded as a top-level API
+        # parameter — Anthropic enables citations per document content block
+        # ({"type": "document", ..., "citations": {"enabled": true}}).
+        # Callers should include citation-enabled document blocks directly in
+        # their message content rather than using this kwarg.
 
         api_kwargs.update(kwargs)
 

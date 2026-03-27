@@ -14,6 +14,12 @@ from core.types import (
     ToolCall,
     ToolDefinition,
 )
+from providers._shared import (
+    normalize_responses_usage,
+    parse_responses_output,
+    to_responses_input_items,
+    to_responses_tools,
+)
 from providers.base import BaseProvider
 
 BUILT_IN_TOOL_TYPES = frozenset(
@@ -26,111 +32,6 @@ BUILT_IN_TOOL_TYPES = frozenset(
         "mcp",
     }
 )
-
-
-def _to_input_items(
-    messages: List[NormalizedMessage],
-) -> tuple[Optional[str], List[Dict[str, Any]]]:
-    """Convert normalized messages to Responses API input items.
-
-    Returns ``(instructions, items)`` where *instructions* is extracted from
-    the first system message (Responses API uses a dedicated field).
-    """
-    instructions: Optional[str] = None
-    items: List[Dict[str, Any]] = []
-
-    for m in messages:
-        if m.role == Role.SYSTEM:
-            instructions = m.content
-            continue
-
-        if m.role == Role.USER:
-            items.append({"role": "user", "content": m.content})
-
-        elif m.role == Role.ASSISTANT:
-            if m.content:
-                items.append(
-                    {
-                        "type": "message",
-                        "role": "assistant",
-                        "content": [{"type": "output_text", "text": m.content}],
-                    }
-                )
-            for tc in m.tool_calls:
-                items.append(
-                    {
-                        "type": "function_call",
-                        "call_id": tc.id,
-                        "name": tc.name,
-                        "arguments": json.dumps(tc.arguments),
-                    }
-                )
-
-        elif m.role == Role.TOOL:
-            items.append(
-                {
-                    "type": "function_call_output",
-                    "call_id": m.tool_call_id or "",
-                    "output": m.content,
-                }
-            )
-
-    return instructions, items
-
-
-def _to_tools(
-    tools: Optional[List[ToolDefinition]],
-    built_in_tools: Optional[List[Dict[str, Any]]] = None,
-    mcp_servers: Optional[List[Dict[str, Any]]] = None,
-) -> Optional[List[Dict[str, Any]]]:
-    """Build the Responses API tools list.
-
-    Merges user-defined function tools, built-in tool configs (web_search,
-    code_interpreter, computer_use, image_generation, file_search, shell,
-    local_shell, apply_patch, tool_search), and remote MCP server configs.
-    """
-    result: List[Dict[str, Any]] = []
-
-    if tools:
-        for t in tools:
-            result.append(
-                {
-                    "type": "function",
-                    "name": t.name,
-                    "description": t.description,
-                    "parameters": t.json_schema,
-                    "strict": False,
-                }
-            )
-
-    if built_in_tools:
-        for bt in built_in_tools:
-            result.append(bt)
-
-    if mcp_servers:
-        for mcp in mcp_servers:
-            entry: Dict[str, Any] = {
-                "type": "mcp",
-                "server_label": mcp.get("server_label", "mcp"),
-                "require_approval": mcp.get("require_approval", "never"),
-            }
-            if "server_url" in mcp:
-                entry["server_url"] = mcp["server_url"]
-            if "connector_id" in mcp:
-                entry["connector_id"] = mcp["connector_id"]
-            if "server_description" in mcp:
-                entry["server_description"] = mcp["server_description"]
-            if "headers" in mcp:
-                entry["headers"] = mcp["headers"]
-            if "authorization" in mcp:
-                entry["authorization"] = mcp["authorization"]
-            if "allowed_tools" in mcp:
-                entry["allowed_tools"] = mcp["allowed_tools"]
-            if "defer_loading" in mcp:
-                entry["defer_loading"] = mcp["defer_loading"]
-            result.append(entry)
-
-    return result or None
 
 
 class OpenAIResponsesProvider(BaseProvider):
@@ -155,7 +56,15 @@ class OpenAIResponsesProvider(BaseProvider):
         tools: Optional[List[ToolDefinition]] = None,
         **kwargs: Any,
     ) -> NormalizedResponse:
-        instructions, input_items = _to_input_items(messages)
+        """Run via the OpenAI Responses API.
+
+        Extra ``kwargs`` are forwarded to ``responses.create`` and support the
+        full Responses API surface, including: ``temperature``, ``tool_choice``,
+        ``truncation``, ``background``, ``context_management``, ``conversation``,
+        ``parallel_tool_calls``, ``max_output_tokens``, ``max_tool_calls``,
+        ``text`` / ``output_types``, ``metadata``.
+        """
+        instructions, input_items = to_responses_input_items(messages)
 
         built_in_tools = kwargs.pop("built_in_tools", None)
         mcp_servers = kwargs.pop("mcp_servers", None)
@@ -173,7 +82,7 @@ class OpenAIResponsesProvider(BaseProvider):
         if instructions:
             api_kwargs["instructions"] = instructions
 
-        tools_list = _to_tools(tools, built_in_tools, mcp_servers)
+        tools_list = to_responses_tools(tools, built_in_tools, mcp_servers)
         if tools_list:
             api_kwargs["tools"] = tools_list
 
@@ -187,10 +96,8 @@ class OpenAIResponsesProvider(BaseProvider):
 
         if previous_response_id:
             api_kwargs["previous_response_id"] = previous_response_id
-
         if store is not None:
             api_kwargs["store"] = store
-
         if include:
             api_kwargs["include"] = include
 
@@ -205,58 +112,14 @@ class OpenAIResponsesProvider(BaseProvider):
                 provider=self.name,
             ) from exc
 
-        content = ""
-        tool_calls: List[ToolCall] = []
-        thinking_content = ""
-
-        for item in resp.output:
-            item_type = getattr(item, "type", None)
-
-            if item_type == "message":
-                for part in item.content:
-                    if getattr(part, "type", None) == "output_text":
-                        content += part.text
-
-            elif item_type == "function_call":
-                args_raw = getattr(item, "arguments", "{}")
-                arguments = json.loads(args_raw) if isinstance(args_raw, str) else args_raw
-                tool_calls.append(
-                    ToolCall(
-                        id=getattr(item, "call_id", ""),
-                        name=item.name,
-                        arguments=arguments,
-                    )
-                )
-
-            elif item_type == "reasoning":
-                for part in getattr(item, "summary", []) or []:
-                    if getattr(part, "type", None) == "summary_text":
-                        thinking_content += getattr(part, "text", "")
-
+        content, tool_calls, thinking_content, _annotations = parse_responses_output(resp.output)
         out_msg = NormalizedMessage(
             role=Role.ASSISTANT,
             content=content,
             tool_calls=tool_calls,
             thinking_content=thinking_content or None,
         )
-
-        usage: Dict[str, Any] = {}
-        raw_usage = getattr(resp, "usage", None)
-        if raw_usage:
-            usage["input_tokens"] = getattr(raw_usage, "input_tokens", 0)
-            usage["output_tokens"] = getattr(raw_usage, "output_tokens", 0)
-            usage["total_tokens"] = getattr(raw_usage, "total_tokens", 0)
-            input_details = getattr(raw_usage, "input_tokens_details", None)
-            if input_details:
-                cached = getattr(input_details, "cached_tokens", 0)
-                if cached:
-                    usage["cached_tokens"] = cached
-            output_details = getattr(raw_usage, "output_tokens_details", None)
-            if output_details:
-                reasoning = getattr(output_details, "reasoning_tokens", 0)
-                if reasoning:
-                    usage["reasoning_tokens"] = reasoning
-
+        usage = normalize_responses_usage(getattr(resp, "usage", None))
         return NormalizedResponse(
             messages=[out_msg],
             usage=usage,
@@ -271,7 +134,7 @@ class OpenAIResponsesProvider(BaseProvider):
         tools: Optional[List[ToolDefinition]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[StreamEvent]:
-        instructions, input_items = _to_input_items(messages)
+        instructions, input_items = to_responses_input_items(messages)
 
         built_in_tools = kwargs.pop("built_in_tools", None)
         mcp_servers = kwargs.pop("mcp_servers", None)
@@ -290,7 +153,7 @@ class OpenAIResponsesProvider(BaseProvider):
         if instructions:
             api_kwargs["instructions"] = instructions
 
-        tools_list = _to_tools(tools, built_in_tools, mcp_servers)
+        tools_list = to_responses_tools(tools, built_in_tools, mcp_servers)
         if tools_list:
             api_kwargs["tools"] = tools_list
 
@@ -304,10 +167,8 @@ class OpenAIResponsesProvider(BaseProvider):
 
         if previous_response_id:
             api_kwargs["previous_response_id"] = previous_response_id
-
         if store is not None:
             api_kwargs["store"] = store
-
         if include:
             api_kwargs["include"] = include
 
@@ -354,23 +215,8 @@ class OpenAIResponsesProvider(BaseProvider):
                     elif event_type == "response.completed":
                         final = getattr(event, "response", None)
                         if final:
-                            raw_usage = getattr(final, "usage", None)
-                            if raw_usage:
-                                usage: Dict[str, Any] = {
-                                    "input_tokens": getattr(raw_usage, "input_tokens", 0),
-                                    "output_tokens": getattr(raw_usage, "output_tokens", 0),
-                                    "total_tokens": getattr(raw_usage, "total_tokens", 0),
-                                }
-                                input_details = getattr(raw_usage, "input_tokens_details", None)
-                                if input_details:
-                                    cached = getattr(input_details, "cached_tokens", 0)
-                                    if cached:
-                                        usage["cached_tokens"] = cached
-                                output_details = getattr(raw_usage, "output_tokens_details", None)
-                                if output_details:
-                                    reasoning_tok = getattr(output_details, "reasoning_tokens", 0)
-                                    if reasoning_tok:
-                                        usage["reasoning_tokens"] = reasoning_tok
+                            usage = normalize_responses_usage(getattr(final, "usage", None))
+                            if usage:
                                 yield StreamEvent(type="usage", usage=usage)
 
                     elif event_type in (

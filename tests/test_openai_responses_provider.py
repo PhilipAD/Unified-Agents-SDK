@@ -1,5 +1,6 @@
 from core.types import NormalizedMessage, Role, ToolCall, ToolDefinition
-from providers.openai_responses import _to_input_items, _to_tools
+from providers._shared import to_responses_input_items as _to_input_items
+from providers._shared import to_responses_tools as _to_tools
 
 
 def test_to_input_items_basic():

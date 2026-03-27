@@ -25,7 +25,32 @@ class GeminiProvider(BaseProvider):
     name = "gemini"
 
     def _client(self) -> genai.Client:
-        return genai.Client(api_key=self.api_key)
+        """Build the Gemini client.
+
+        Supports both Gemini Developer API (api_key) and Vertex AI.
+        Pass ``vertex_ai=True`` (or ``vertexai=True``) in provider ``extra``
+        kwargs to switch to Vertex; combine with ``vertex_project``,
+        ``vertex_location``, ``vertex_credentials``, and optionally
+        ``http_options`` (a dict or ``genai_types.HttpOptions`` instance).
+        """
+        extra = self.extra or {}
+
+        if extra.get("vertex_ai") or extra.get("vertexai"):
+            client_kwargs: Dict[str, Any] = {"vertexai": True}
+            if extra.get("vertex_project"):
+                client_kwargs["project"] = extra["vertex_project"]
+            if extra.get("vertex_location"):
+                client_kwargs["location"] = extra["vertex_location"]
+            if extra.get("vertex_credentials"):
+                client_kwargs["credentials"] = extra["vertex_credentials"]
+            if extra.get("http_options"):
+                client_kwargs["http_options"] = extra["http_options"]
+            return genai.Client(**client_kwargs)
+
+        client_kwargs = {"api_key": self.api_key}
+        if extra.get("http_options"):
+            client_kwargs["http_options"] = extra["http_options"]
+        return genai.Client(**client_kwargs)
 
     def _build_contents(self, messages: List[NormalizedMessage]) -> List[genai_types.Content]:
         contents: List[genai_types.Content] = []

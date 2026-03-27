@@ -12,14 +12,8 @@ from core.types import (
     ToolCall,
     ToolDefinition,
 )
+from providers._shared import CHAT_ROLE_MAP
 from providers.base import BaseProvider
-
-ROLE_MAP = {
-    Role.SYSTEM: "system",
-    Role.USER: "user",
-    Role.ASSISTANT: "assistant",
-    Role.TOOL: "tool",
-}
 
 AGENT_TOOL_TYPES = frozenset(
     {
@@ -40,7 +34,7 @@ def _to_mistral_messages(
     out: List[Dict[str, Any]] = []
     for m in messages:
         msg: Dict[str, Any] = {
-            "role": ROLE_MAP[m.role],
+            "role": CHAT_ROLE_MAP[m.role],
         }
 
         if m.role == Role.USER and isinstance(m.content, list):

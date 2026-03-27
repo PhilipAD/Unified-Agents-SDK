@@ -14,48 +14,36 @@ from core.types import (
     ToolCall,
     ToolDefinition,
 )
+from providers._shared import (
+    accumulate_tool_delta,
+    build_openai_chat_tools,
+    emit_pending_tool_calls,
+    msg_to_openai_chat,
+    normalize_openai_usage,
+)
 from providers.base import BaseProvider
-
-ROLE_MAP = {
-    Role.SYSTEM: "system",
-    Role.USER: "user",
-    Role.ASSISTANT: "assistant",
-    Role.TOOL: "tool",
-}
 
 
 class OpenAICompatibleProvider(BaseProvider):
+    """Generic OpenAI chat-completions compatible provider.
+
+    Any JSON field not listed below can be passed directly in ``kwargs``
+    (e.g. ``temperature``, ``top_p``, ``tool_choice``, ``seed``,
+    ``response_format``, ``parallel_tool_calls``, ``stream_options``,
+    ``logprobs``, ``n``, ``stop``, ``presence_penalty``,
+    ``frequency_penalty``, ``user``).
+    """
+
     name = "openai_compatible"
 
     def _msg_to_api(self, m: NormalizedMessage) -> Dict[str, Any]:
         """Convert a NormalizedMessage to the OpenAI chat-completions message shape.
 
-        When content is a list (multimodal / vision), it is forwarded as-is.
-        OpenAI Chat Completions accepts content blocks in the form:
-          [{"type": "text", "text": "..."}, {"type": "image_url", "image_url": {"url": "..."}}]
-        Any OpenAI-compatible endpoint that supports vision uses the same shape.
+        Content lists (multimodal / vision) are forwarded as-is; OpenAI
+        Chat Completions and all compatible endpoints accept
+        ``[{"type": "text", ...}, {"type": "image_url", ...}]``.
         """
-        msg: Dict[str, Any] = {
-            "role": ROLE_MAP[m.role],
-            "content": m.content,
-        }
-        if m.role == Role.ASSISTANT and m.tool_calls:
-            msg["tool_calls"] = [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {
-                        "name": tc.name,
-                        "arguments": json.dumps(tc.arguments),
-                    },
-                }
-                for tc in m.tool_calls
-            ]
-        if m.role == Role.TOOL and m.tool_call_id:
-            msg["tool_call_id"] = m.tool_call_id
-        if m.name:
-            msg["name"] = m.name
-        return msg
+        return msg_to_openai_chat(m)
 
     def _build_payload(
         self,
@@ -68,18 +56,9 @@ class OpenAICompatibleProvider(BaseProvider):
             "messages": [self._msg_to_api(m) for m in messages],
             **options,
         }
-        if tools:
-            payload["tools"] = [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.json_schema,
-                    },
-                }
-                for t in tools
-            ]
+        tool_list = build_openai_chat_tools(tools)
+        if tool_list:
+            payload["tools"] = tool_list
         return payload
 
     @staticmethod
@@ -126,7 +105,10 @@ class OpenAICompatibleProvider(BaseProvider):
             tool_calls=tool_calls,
         )
 
-        usage = data.get("usage") or {}
+        usage = normalize_openai_usage(data.get("usage") or {})
+        finish_reason = choice.get("finish_reason")
+        if finish_reason:
+            usage["finish_reason"] = finish_reason
         return NormalizedResponse(
             messages=[out_msg],
             usage=usage,
@@ -149,10 +131,8 @@ class OpenAICompatibleProvider(BaseProvider):
         }
         payload = self._build_payload(messages, tools, stream=True, **kwargs)
 
-        # Accumulators for streamed tool calls (keyed by index)
         pending_tool_calls: Dict[int, Dict[str, Any]] = {}
-        full_content = ""
-        usage: Dict[str, int] = {}
+        raw_usage: Dict[str, Any] = {}
 
         async with httpx.AsyncClient(timeout=None) as client:
             try:
@@ -161,13 +141,13 @@ class OpenAICompatibleProvider(BaseProvider):
                     async for line in resp.aiter_lines():
                         if not line or not line.startswith("data:"):
                             continue
-                        chunk_str = line[len("data:") :].strip()
+                        chunk_str = line[len("data:"):].strip()
                         if chunk_str == "[DONE]":
                             break
 
                         chunk = json.loads(chunk_str)
-                        if "usage" in chunk and chunk["usage"]:
-                            usage = chunk["usage"]
+                        if chunk.get("usage"):
+                            raw_usage = chunk["usage"]
 
                         choice = chunk["choices"][0] if chunk.get("choices") else None
                         if not choice:
@@ -175,35 +155,14 @@ class OpenAICompatibleProvider(BaseProvider):
                         delta = choice.get("delta", {})
 
                         if delta.get("content"):
-                            full_content += delta["content"]
                             yield StreamEvent(type="chunk", delta=delta["content"])
 
-                        if "tool_calls" in delta:
-                            for tc_delta in delta["tool_calls"]:
-                                idx = tc_delta["index"]
-                                if idx not in pending_tool_calls:
-                                    pending_tool_calls[idx] = {
-                                        "id": tc_delta.get("id", ""),
-                                        "name": "",
-                                        "arguments": "",
-                                    }
-                                entry = pending_tool_calls[idx]
-                                if tc_delta.get("id"):
-                                    entry["id"] = tc_delta["id"]
-                                fn = tc_delta.get("function", {})
-                                if fn.get("name"):
-                                    entry["name"] = fn["name"]
-                                if fn.get("arguments"):
-                                    entry["arguments"] += fn["arguments"]
+                        for tc_delta in delta.get("tool_calls") or []:
+                            accumulate_tool_delta(pending_tool_calls, tc_delta)
 
-                        finish = choice.get("finish_reason")
-                        if finish == "tool_calls":
-                            for _idx in sorted(pending_tool_calls):
-                                e = pending_tool_calls[_idx]
-                                args = json.loads(e["arguments"]) if e["arguments"] else {}
-                                tc = ToolCall(id=e["id"], name=e["name"], arguments=args)
+                        if choice.get("finish_reason") == "tool_calls":
+                            for tc in emit_pending_tool_calls(pending_tool_calls):
                                 yield StreamEvent(type="tool_call", tool_call=tc)
-                            pending_tool_calls.clear()
 
             except httpx.HTTPStatusError as exc:
                 raise GatewayError(
@@ -212,6 +171,6 @@ class OpenAICompatibleProvider(BaseProvider):
                     status_code=exc.response.status_code,
                 ) from exc
 
-        if usage:
-            yield StreamEvent(type="usage", usage=usage)
+        if raw_usage:
+            yield StreamEvent(type="usage", usage=normalize_openai_usage(raw_usage))
         yield StreamEvent(type="done")
