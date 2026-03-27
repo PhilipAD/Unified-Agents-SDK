@@ -212,18 +212,18 @@ Every **—** is a genuine gap in **this SDK** or a real vendor limitation.
 | Row · column | Reason |
 |--------------|--------|
 | **MCP · Mistral** | Mistral [supports MCP](https://docs.mistral.ai/agents/tools/mcp) via `RunContext` + Agents SDK — a different API pattern. This gateway has not yet bridged it to the unified `MCP_SERVERS` / `mcp_namespaces` path. |
-| **Server-side built-in tools · OpenAI** | Hosted tools require the **Responses API**. The `openai_compatible` column is generic Chat Completions — bring your own function tools. |
+| **Server-side built-in tools · OAI-compat¹** | Hosted tools require the **Responses API**. The `openai_compatible` column is generic Chat Completions — bring your own function tools. |
 | **Server-side built-in tools · DeepSeek** | DeepSeek has no hosted tool service. All tools are user-supplied via function calling. |
-| **Extended thinking · OpenAI** | Reasoning parameters are wired only in the **OpenAI Responses** adapter. The generic `openai_compatible` column does not map them (though extra kwargs are forwarded). |
+| **Extended thinking · OAI-compat¹** | Reasoning parameters are wired only in the **OpenAI Responses** adapter. The generic `openai_compatible` column does not map them (though extra kwargs are forwarded). |
 | **Vision · DeepSeek** | The official [DeepSeek API](https://api-docs.deepseek.com/) (`deepseek-chat`, `deepseek-reasoner`) does not support image input. DeepSeek VL is a separate product. |
-| **Prompt caching · OpenAI** | The `openai_compatible` adapter is generic Chat Completions. OpenAI's server-side prefix cache is implicit; no explicit cache-control API on this path. |
+| **Prompt caching · OAI-compat¹** | The `openai_compatible` adapter is generic Chat Completions. OpenAI's server-side prefix cache is implicit; no explicit cache-control API on this path. |
 | **Prompt caching · Mistral** | Mistral has no documented explicit prompt-cache API. |
-| **Citations · OpenAI** | Inline `url_citation` annotations require **Responses + web search tool**. Generic Chat Completions returns no citation annotation objects. |
+| **Citations · OAI-compat¹** | Inline `url_citation` annotations require **Responses + web search tool**. Generic Chat Completions returns no citation annotation objects. |
 | **Citations · DeepSeek / Mistral** | Neither API returns structured citation annotation objects. |
-| **Document / PDF · OpenAI** | The generic `openai_compatible` Chat Completions path has no native document block. Use the `openai_responses` column with `file_search` (see † above). |
+| **Document / PDF · OAI-compat¹** | The generic `openai_compatible` Chat Completions path has no native document block. Use the `openai_responses` column with `file_search` (see † above). |
 | **Document / PDF · DeepSeek** | DeepSeek's chat API has no native document or PDF block. |
 | **Document / PDF · xAI** | xAI Grok has no documented inline file/PDF input on the Responses path used by this SDK. |
-| **Live web search · OpenAI** | Hosted web search requires the **Responses API**. Generic Chat Completions uses function tools you supply. |
+| **Live web search · OAI-compat¹** | Hosted web search requires the **Responses API**. Generic Chat Completions uses function tools you supply. |
 | **Live web search · DeepSeek** | No hosted search tool; implement search as a custom function. |
 
 ---
