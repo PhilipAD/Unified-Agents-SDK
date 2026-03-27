@@ -1053,10 +1053,11 @@ unified-agents-sdk/
 |---------|------|--------|
 | **v0.1.0** | Core gateway: 3 providers, tool loop, SSE, MCP, named presets, BYOK, 101 tests | ✅ Shipped |
 | **v0.2.0** | Full provider coverage: 8 dedicated adapters (OpenAI, OpenAI Responses, Anthropic, Gemini, Groq, DeepSeek, Mistral, xAI/Grok), extended thinking/reasoning, server-side tools, multimodal I/O, citations, 200 tests | ✅ Shipped |
-| **v0.3** | Auth middleware, rate limiting, request logging | 🔜 Planned |
-| **v0.4** | Agent handoffs — native multi-agent delegation via `call_agent` meta-tool | 🔜 Planned |
-| **v0.5** | Durable execution — resume interrupted runs, persistent step records | 💡 Exploring |
-| **v0.6** | Provider marketplace — plug-in registry for community adapters | 💡 Exploring |
+| **v0.3.0** | `providers/_shared.py`, OpenAI-compat usage normalisation (`input_tokens`/`output_tokens`), Gemini Vertex/`http_options`, MCP + Postman docs (62 requests), README MCP two-path guide | ✅ Shipped |
+| **v0.4** | Auth middleware, rate limiting, request logging | 🔜 Planned |
+| **v0.5** | Agent handoffs — native multi-agent delegation via `call_agent` meta-tool | 🔜 Planned |
+| **v0.6** | Durable execution — resume interrupted runs, persistent step records | 💡 Exploring |
+| **v0.7** | Provider marketplace — plug-in registry for community adapters | 💡 Exploring |
 | **v1.0** | Production-grade — auth, permissions, audit logs, HA deployment guide | 💡 Exploring |
 
 ---

@@ -52,7 +52,7 @@ async def _lifespan(app: FastAPI):  # noqa: ARG001
 
 lifespan = _lifespan
 
-app = FastAPI(title="Unified Agents SDK", version="0.1.0", lifespan=_lifespan)
+app = FastAPI(title="Unified Agents SDK", version="0.3.0", lifespan=_lifespan)
 
 
 def configure(

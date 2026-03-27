@@ -11,9 +11,26 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 _Changes that are merged to `main` but not yet released._
 
+---
+
+## [0.3.0] — 2026-03-27
+
+### Added
+
+- `providers/_shared.py` — Shared helpers: `CHAT_ROLE_MAP`, `normalize_openai_usage`, `normalize_responses_usage`, `msg_to_openai_chat`, `build_openai_chat_tools`, streaming tool deltas, `to_responses_input_items` / `to_responses_tools` / `parse_responses_output` for OpenAI Responses–style providers.
+- `providers/gemini.py` — Optional Vertex AI and `http_options` via provider `extra` (`vertex_ai`, `vertex_project`, `vertex_location`, `vertex_credentials`).
+
 ### Changed
 
-- `postman/unified-agents-sdk.postman_collection.json` — Expanded to **62 requests** in **11 folders**: OpenAI Responses / xAI / Mistral profile examples (folder 2); dynamic markdown contexts `md_hierarchy`, `md_files`, `md_glob` (folder 6); **MCP README scenarios** (folder 11: `github_mcp` bridge, provider Path 2, Claude Agent MCP, Codex inverted bridge). Collection description cross-links README MCP section; `README.md` Postman table updated to match.
+- **Breaking:** `openai_compatible` (and streaming) now returns normalised usage with `input_tokens` / `output_tokens` instead of passing through raw `prompt_tokens` / `completion_tokens`. Clients that parsed only the old keys should read the new fields (or use `normalize_openai_usage` logic).
+- `providers/openai_responses.py`, `providers/xai.py` — Refactored to use `_shared` parsers and usage helpers; xAI streaming usage now includes cached/reasoning/cost fields where available.
+- `providers/groq.py`, `providers/mistral.py`, `providers/deepseek.py` — Use shared chat message / tool builders or `CHAT_ROLE_MAP` where applicable.
+- `providers/anthropic.py` — Removed no-op citation block; `citations` kwarg is documented as per-block on documents, not top-level.
+
+### Documentation
+
+- `README.md` — Full **MCP — Model Context Protocol** section (gateway Path 1 vs provider Path 2, bridges, Claude Agent / Codex / Copilot); curated harness table clarified; architecture diagram updated; Postman pointer from MCP section.
+- `postman/unified-agents-sdk.postman_collection.json` — **62 requests** in **11 folders**: OpenAI Responses / xAI / Mistral profiles (folder 2); dynamic contexts `md_hierarchy`, `md_files`, `md_glob` (folder 6); **MCP README scenarios** (folder 11). Collection `info.description` cross-links the README.
 
 ---
 
@@ -138,7 +155,8 @@ Initial public release.
 - `.env.example` — Fully documented environment variable reference.
 - `pyproject.toml` — Hatchling build, ruff config, pytest config.
 
-[Unreleased]: https://github.com/PhilipAD/Unified-Agents-SDK/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/PhilipAD/Unified-Agents-SDK/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/PhilipAD/Unified-Agents-SDK/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/PhilipAD/Unified-Agents-SDK/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/PhilipAD/Unified-Agents-SDK/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/PhilipAD/Unified-Agents-SDK/releases/tag/v0.1.0
