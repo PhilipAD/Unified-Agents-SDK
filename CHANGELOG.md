@@ -11,6 +11,10 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 _Changes that are merged to `main` but not yet released._
 
+### Changed
+
+- `postman/unified-agents-sdk.postman_collection.json` — Expanded to **62 requests** in **11 folders**: OpenAI Responses / xAI / Mistral profile examples (folder 2); dynamic markdown contexts `md_hierarchy`, `md_files`, `md_glob` (folder 6); **MCP README scenarios** (folder 11: `github_mcp` bridge, provider Path 2, Claude Agent MCP, Codex inverted bridge). Collection description cross-links README MCP section; `README.md` Postman table updated to match.
+
 ---
 
 ## [0.2.1] — 2026-03-26

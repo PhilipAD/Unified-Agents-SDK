@@ -2,7 +2,7 @@
   "info": {
     "name": "Unified Agents SDK",
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "description": "Complete Postman collection for the Unified Agents SDK.\n\nTwo endpoints:\n- POST /agent-query         — synchronous, returns JSON\n- POST /agent-query/stream  — Server-Sent Events (SSE)\n\nAll requests share the same body schema (AgentQueryRequest).\nFields marked OPTIONAL can be omitted.\n\nBring-your-own-key (BYOK): optional top-level field `provider_credentials` with `api_key`, optional `model`, optional `base_url` (OpenAI-compatible only). Requires `ALLOW_PER_REQUEST_PROVIDER_CREDENTIALS=true` in gateway .env — default is false (403 if you send real credentials while disabled).\n\nVariables — set in the collection or an environment:\n  base_url           http://localhost:8000\n  openai_key         paste here for BYOK OpenAI examples (same secret you could put in gateway .env)\n  anthropic_key      sk-ant-...\n  google_key         AI...\n  mcp_server_url     http://your-mcp-server/mcp\n  rag_url            http://your-rag-service/search\n  tool_url           http://your-tool-service/run",
+    "description": "Complete Postman collection for the Unified Agents SDK — kept in sync with README.md (MCP two paths, bridges, dynamic markdown contexts, provider profiles).\n\nTwo endpoints:\n- POST /agent-query         — synchronous, returns JSON\n- POST /agent-query/stream  — Server-Sent Events (SSE)\n\nAll requests share the same body schema (AgentQueryRequest).\nFields marked OPTIONAL can be omitted.\n\nMCP: see README section **MCP — Model Context Protocol**. Folder **11** matches README scenarios (named github_mcp preset, provider-native options.mcp_servers, Claude Agent). Folders **3–4** = gateway Path 1; folder **11.2** = Path 2.\n\nBring-your-own-key (BYOK): optional top-level field `provider_credentials` with `api_key`, optional `model`, optional `base_url` (OpenAI-compatible only). Requires `ALLOW_PER_REQUEST_PROVIDER_CREDENTIALS=true` in gateway .env — default is false (403 if you send real credentials while disabled).\n\nVariables — set in the collection or an environment:\n  base_url           http://localhost:8000\n  openai_key         paste here for BYOK OpenAI examples (same secret you could put in gateway .env)\n  anthropic_key      sk-ant-...\n  google_key         AI...\n  groq_key           gsk-...\n  mcp_server_url     http://your-mcp-server/mcp\n  rag_url            http://your-rag-service/search\n  tool_url           http://your-tool-service/run",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -242,6 +242,78 @@
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"output\": \"A large language model is a neural network trained on vast text corpora to predict and generate natural language.\",\n  \"tool_traces\": [],\n  \"usage\": { \"input_tokens\": 13, \"output_tokens\": 24 },\n  \"provider\": \"openai_compatible\",\n  \"model\": \"gpt-4o\",\n  \"warnings\": [],\n  \"errors\": []\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "2.7 OpenAI Responses profile (openai-r)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input\": \"Reply with exactly one sentence defining an embedding.\",\n  \"profile\": \"openai-r\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/agent-query", "host": ["{{base_url}}"], "path": ["agent-query"] },
+            "description": "Requires AGENT_PROFILES entry, e.g.:\n  {\"openai-r\":{\"provider_name\":\"openai_responses\",\"model\":\"gpt-4o\"}}\n\nUse folder **11** for provider-native MCP via options.mcp_servers on this profile."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"output\": \"An embedding is a dense vector representation of text or data.\",\n  \"tool_traces\": [],\n  \"usage\": {},\n  \"provider\": \"openai_responses\",\n  \"model\": \"gpt-4o\",\n  \"warnings\": [],\n  \"errors\": []\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "2.8 xAI Grok profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input\": \"Name one capability of Grok-style models.\",\n  \"profile\": \"grok\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/agent-query", "host": ["{{base_url}}"], "path": ["agent-query"] },
+            "description": "Requires AGENT_PROFILES with provider_name xai and XAI_API_KEY in .env, e.g.:\n  {\"grok\":{\"provider_name\":\"xai\",\"model\":\"grok-2-latest\"}}"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"output\": \"Real-time web-grounded answers.\",\n  \"tool_traces\": [],\n  \"usage\": {},\n  \"provider\": \"xai\",\n  \"model\": \"grok-2-latest\",\n  \"warnings\": [],\n  \"errors\": []\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "2.9 Mistral profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input\": \"Translate 'good morning' to German.\",\n  \"profile\": \"mistral\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/agent-query", "host": ["{{base_url}}"], "path": ["agent-query"] },
+            "description": "Requires MISTRAL_API_KEY and AGENT_PROFILES, e.g.:\n  {\"mistral\":{\"provider_name\":\"mistral\",\"model\":\"mistral-large-latest\"}}"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"output\": \"Guten Morgen\",\n  \"tool_traces\": [],\n  \"usage\": {},\n  \"provider\": \"mistral\",\n  \"model\": \"mistral-large-latest\",\n  \"warnings\": [],\n  \"errors\": []\n}"
             }
           ]
         }
@@ -635,7 +707,7 @@
 
     {
       "name": "6 — Inline Contexts",
-      "description": "Inject background context (RAG results, company info, user profile, etc.) into the agent's system prompt. Can be static text or fetched from an HTTP endpoint per-request.",
+      "description": "Inject background context (RAG results, company info, user profile, etc.) into the agent's system prompt. Static text, HTTP fetch, ContextForge, or dynamic markdown (md_hierarchy / md_files / md_glob) — same fields as README.",
       "item": [
 
         {
@@ -802,6 +874,78 @@
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"output\": \"Q2 roadmap highlights: Launch multi-region support (April), Ship mobile app v2 (May), GA of the API gateway (June). Three major features, 12 bug-fix releases planned.\",\n  \"tool_traces\": [],\n  \"usage\": { \"input_tokens\": 280, \"output_tokens\": 48 },\n  \"provider\": \"openai_compatible\",\n  \"model\": \"gpt-4o\",\n  \"warnings\": [],\n  \"errors\": []\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "6.8 Dynamic context — md_hierarchy (walk AGENTS.md / rules)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input\": \"Summarise the project rules that apply to this repo.\",\n  \"runtime\": {\n    \"contexts\": [\n      {\n        \"name\": \"repo_rules\",\n        \"mode\": \"md_hierarchy\",\n        \"filenames\": [\"AGENTS.md\", \"CLAUDE.md\"],\n        \"cwd\": \".\",\n        \"stop_at_git_root\": true,\n        \"resolve_imports\": true\n      }\n    ]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/agent-query", "host": ["{{base_url}}"], "path": ["agent-query"] },
+            "description": "Per-request hierarchical markdown collection (same utility as global harness). Walks cwd and ancestors for each filename. See README **Request Schema** → runtime.contexts and api/http.py DynamicContext."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"output\": \"Project rules: ...\",\n  \"tool_traces\": [],\n  \"usage\": {},\n  \"provider\": \"openai_compatible\",\n  \"model\": \"gpt-4o\",\n  \"warnings\": [],\n  \"errors\": []\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "6.9 Dynamic context — md_files (explicit paths)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input\": \"In one sentence, what is this repository?\",\n  \"runtime\": {\n    \"contexts\": [\n      {\n        \"name\": \"readme\",\n        \"mode\": \"md_files\",\n        \"paths\": [\"README.md\"],\n        \"cwd\": \".\"\n      }\n    ]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/agent-query", "host": ["{{base_url}}"], "path": ["agent-query"] },
+            "description": "Reads explicit file paths (absolute or relative to cwd). Missing files are skipped with a warning."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"output\": \"This repository is the Unified Agents SDK.\",\n  \"tool_traces\": [],\n  \"usage\": {},\n  \"provider\": \"openai_compatible\",\n  \"model\": \"gpt-4o\",\n  \"warnings\": [],\n  \"errors\": []\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "6.10 Dynamic context — md_glob (scan dirs)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input\": \"List topics covered in docs/*.md (brief).\",\n  \"runtime\": {\n    \"contexts\": [\n      {\n        \"name\": \"docs_md\",\n        \"mode\": \"md_glob\",\n        \"glob_dirs\": [\"docs\"],\n        \"glob_pattern\": \"*.md\",\n        \"cwd\": \".\"\n      }\n    ]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/agent-query", "host": ["{{base_url}}"], "path": ["agent-query"] },
+            "description": "Collects all files matching glob_pattern under each glob_dir. Empty dirs produce no text (may warn)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"output\": \"Docs cover API, MCP, and deployment.\",\n  \"tool_traces\": [],\n  \"usage\": {},\n  \"provider\": \"openai_compatible\",\n  \"model\": \"gpt-4o\",\n  \"warnings\": [],\n  \"errors\": []\n}"
             }
           ]
         }
@@ -1342,6 +1486,110 @@
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"output\": \"Hi! How can I help?\",\n  \"tool_traces\": [],\n  \"usage\": { \"input_tokens\": 4, \"output_tokens\": 7 },\n  \"provider\": \"openai_compatible\",\n  \"model\": \"gpt-4o\",\n  \"warnings\": [],\n  \"errors\": []\n}"
+            }
+          ]
+        }
+
+      ]
+    },
+
+    {
+      "name": "11 — MCP README scenarios (bridges & paths)",
+      "description": "Mirrors README **MCP — Model Context Protocol**: (11.1) gateway Path 1 with the `github_mcp` named preset from COPILOT_MCP_BRIDGE; (11.2) provider Path 2 with options.mcp_servers on OpenAI Responses; (11.3) Claude Agent agent-managed MCP. Bridges only register presets — you still pass mcp_namespaces unless using global Codex tools.",
+      "item": [
+
+        {
+          "name": "11.1 Gateway Path 1 — named github_mcp (Copilot MCP bridge)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input\": \"Using available tools, summarise what you can access on GitHub for this token (high level only).\",\n  \"profile\": \"claude\",\n  \"runtime\": {\n    \"mcp_namespaces\": [\"github_mcp\"]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/agent-query", "host": ["{{base_url}}"], "path": ["agent-query"] },
+            "description": "Gateway connects to GitHub's remote MCP and executes tools locally (Path 1).\n\nRequires on the server:\n  COPILOT_MCP_BRIDGE=true\n  COPILOT_GITHUB_TOKEN=ghp_...   (or GH_TOKEN / GITHUB_TOKEN)\n\nOptional: COPILOT_MCP_TOOLSETS as JSON list in .env.\n\nThe bridge merges preset key `github_mcp` into MCP_SERVERS at bootstrap — same as README **MCP bridges** table."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"output\": \"I can access GitHub repos, issues, and PRs exposed by the MCP server.\",\n  \"tool_traces\": [],\n  \"usage\": {},\n  \"provider\": \"anthropic\",\n  \"model\": \"claude-opus-4-5\",\n  \"warnings\": [],\n  \"errors\": []\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "11.2 Provider Path 2 — options.mcp_servers (OpenAI Responses)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input\": \"If the remote MCP exposes a search tool, use it once for 'MCP protocol' and summarise.\",\n  \"profile\": \"openai-r\",\n  \"options\": {\n    \"mcp_servers\": [\n      {\n        \"type\": \"mcp\",\n        \"server_url\": \"{{mcp_server_url}}\",\n        \"server_label\": \"remote\",\n        \"require_approval\": \"never\"\n      }\n    ]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/agent-query", "host": ["{{base_url}}"], "path": ["agent-query"] },
+            "description": "OpenAI's backend connects to the MCP server directly; the gateway AgentLoop does not execute those tool calls (Path 2).\n\nRequires profile with provider_name openai_responses (e.g. openai-r). Set {{mcp_server_url}} to a real streamable HTTP MCP endpoint.\n\nSee README **Provider Path 2** and providers/openai_responses.py."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"output\": \"MCP is a protocol for tool and context exchange between hosts and servers.\",\n  \"tool_traces\": [],\n  \"usage\": {},\n  \"provider\": \"openai_responses\",\n  \"model\": \"gpt-4o\",\n  \"warnings\": [],\n  \"errors\": []\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "11.3 Claude Agent — agent-managed mcp_servers in options",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input\": \"USER: What MCP-backed capability do you have? Reply briefly.\",\n  \"profile\": \"claude_agent\",\n  \"options\": {\n    \"mcp_servers\": [\n      {\n        \"type\": \"stdio\",\n        \"command\": \"npx\",\n        \"args\": [\"-y\", \"@modelcontextprotocol/server-brave-search\"],\n        \"env\": { \"BRAVE_API_KEY\": \"your-brave-api-key\" }\n      }\n    ],\n    \"allowed_tools\": [\"mcp__brave-search__brave_web_search\"],\n    \"permission_mode\": \"acceptEdits\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/agent-query", "host": ["{{base_url}}"], "path": ["agent-query"] },
+            "description": "Claude Agent SDK runs its own subprocess and MCP lifecycle; runtime.mcp_namespaces is NOT used for this path.\n\nRequires: pip install 'unified-agents-sdk[claude-agent]' and AGENT_PROFILES entry claude_agent with provider_name claude_agent.\n\nReplace BRAVE_API_KEY or swap mcp_servers for your real stdio MCP. README **Claude Agent SDK** section."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"output\": \"I can call tools exposed by the MCP server.\",\n  \"tool_traces\": [],\n  \"usage\": {},\n  \"provider\": \"claude_agent\",\n  \"model\": \"claude-opus-4-5\",\n  \"warnings\": [],\n  \"errors\": []\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "11.4 Codex MCP tools on another provider (inverted bridge)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input\": \"You have Codex MCP tools under the codex.* namespace if enabled. Acknowledge in one sentence.\",\n  \"profile\": \"claude\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/agent-query", "host": ["{{base_url}}"], "path": ["agent-query"] },
+            "description": "When CODEX_MCP_ENABLED=true at gateway bootstrap, tools from `codex mcp-server` are registered globally under namespace `codex`.\n\nUse profile **claude** (or any tool-capable provider) with default use_global_tools: true — NOT profile codex. The codex provider ignores gateway ToolRegistry.\n\nREADME **Codex CLI** inverted bridge."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"output\": \"If codex.* tools are registered globally, I can invoke them from this profile.\",\n  \"tool_traces\": [],\n  \"usage\": {},\n  \"provider\": \"anthropic\",\n  \"model\": \"claude-opus-4-5\",\n  \"warnings\": [],\n  \"errors\": []\n}"
             }
           ]
         }

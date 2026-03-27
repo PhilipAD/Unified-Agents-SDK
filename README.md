@@ -12,7 +12,7 @@
   <a href="https://pypi.org/project/unified-agents-sdk/"><img src="https://img.shields.io/pypi/v/unified-agents-sdk?style=for-the-badge&logo=pypi&logoColor=white" alt="PyPI"></a>
   <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-3_min-blue?style=for-the-badge" alt="Quick Start"></a>
   <a href="#-api-usage"><img src="https://img.shields.io/badge/API-REST_%2B_SSE-green?style=for-the-badge" alt="API"></a>
-  <a href="postman/unified-agents-sdk.postman_collection.json"><img src="https://img.shields.io/badge/Postman-52_examples-orange?style=for-the-badge&logo=postman&logoColor=white" alt="Postman"></a>
+  <a href="postman/unified-agents-sdk.postman_collection.json"><img src="https://img.shields.io/badge/Postman-62_examples-orange?style=for-the-badge&logo=postman&logoColor=white" alt="Postman"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License"></a>
 </p>
 
@@ -842,6 +842,8 @@ COPILOT_MCP_TOOLSETS=["repos","issues","pulls"]   # optional filter
 }
 ```
 
+**Postman:** The collection’s folder **11 — MCP README scenarios** contains saved bodies for Path 1 (`github_mcp` preset), Path 2 (`options.mcp_servers` on `openai-r`), Claude Agent MCP, and the Codex inverted-bridge note. Folders **6.8–6.10** cover `md_hierarchy` / `md_files` / `md_glob` dynamic contexts. See [Postman Collection](#-postman-collection).
+
 ---
 
 ## 📋 Request Schema
@@ -883,22 +885,23 @@ Full schema and SSE event reference: [`docs/API_SPEC.md`](docs/API_SPEC.md)
 
 ## 📬 Postman Collection
 
-Import [`postman/unified-agents-sdk.postman_collection.json`](postman/unified-agents-sdk.postman_collection.json) for **52 ready-made requests** across **10 folders** covering every feature and error case.
+Import [`postman/unified-agents-sdk.postman_collection.json`](postman/unified-agents-sdk.postman_collection.json) for **62 ready-made requests** across **11 folders**. The collection `info.description` is kept aligned with this README (MCP two paths, bridges, dynamic markdown contexts, BYOK).
 
 | Folder | Requests | What it covers |
 |--------|:--------:|----------------|
 | 1 — Basic Queries | 3 | Minimal, system prompt, agent_id targeting |
-| 2 — Provider Profiles | 6 | OpenAI, Anthropic, Gemini, Groq, DeepSeek, options |
-| 3 — Named Presets | 5 | MCP namespaces, context names, profile-baked presets |
-| 4 — Inline MCP Servers | 5 | Streamable HTTP, SSE, auth headers, multi-server |
+| 2 — Provider Profiles | 9 | Default, Claude, Gemini, Groq, DeepSeek, options, **openai-r**, **xAI Grok**, **Mistral** |
+| 3 — Named Presets | 5 | MCP namespaces, context names, profile-baked presets, mixed inline |
+| 4 — Inline MCP Servers | 5 | Streamable HTTP, SSE, auth headers, multi-server, tenant namespace |
 | 5 — Inline HTTP Tools | 5 | POST/JSON, GET/query, multi-tool, auth, isolated |
-| 6 — Inline Contexts | 7 | Static, templates, RAG, GET, multi-context, ContextForge |
-| 7 — Kitchen Sink | 3 | Full combined, sandboxed, real-world DevOps scenario |
+| 6 — Inline Contexts | 10 | Static, templates, RAG, GET, multi-context, ContextForge, isolated, **`md_hierarchy`**, **`md_files`**, **`md_glob`** |
+| 7 — Kitchen Sink | 3 | Full combined, sandboxed, DevOps (MCP + HTTP tool + RAG) |
 | 8 — Streaming (SSE) | 5 | Minimal, profile, context, MCP, warning event |
-| 9 — Error Cases | 6 | 403, unknown namespace/context, MCP failure, bad key |
-| 10 — BYOK | 7 | api_key, model, base_url, Groq, Anthropic, stream, disabled |
+| 9 — Error Cases | 6 | 403 dynamic registration, unknown preset, MCP failure, context skip, bad key |
+| 10 — BYOK | 7 | api_key, model, base_url, Groq, Anthropic, stream, 403, empty credentials |
+| 11 — MCP README scenarios | 4 | **`github_mcp` bridge preset**, **Path 2 `options.mcp_servers` (openai-r)**, **Claude Agent `mcp_servers`**, **Codex inverted bridge** (global `codex.*` tools) |
 
-Set the `base_url` collection variable to your server address.
+Set the `base_url` collection variable to your server address. Use `mcp_server_url`, `openai_key`, `anthropic_key`, `groq_key` where the request body references `{{…}}`.
 
 ---
 
@@ -1029,7 +1032,7 @@ unified-agents-sdk/
 ├── context/           Context registry, ContextForge adapter
 ├── core/              Normalized types, agent loop, durable execution primitives
 ├── docs/              Architecture reference and API specification
-├── postman/           Postman collection (52 requests, 10 folders)
+├── postman/           Postman collection (62 requests, 11 folders)
 ├── providers/         OpenAI, OpenAI Responses, Anthropic, Gemini, Groq, DeepSeek, Mistral, xAI adapters
 ├── runtime/           Router, profile resolution, bootstrap, SSE helpers
 ├── tests/             pytest test suite (238 tests, all offline)
