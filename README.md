@@ -28,6 +28,9 @@
   <a href="https://github.com/PhilipAD/Unified-Agents-SDK/actions/workflows/ci.yml">
     <img src="https://github.com/PhilipAD/Unified-Agents-SDK/actions/workflows/ci.yml/badge.svg" alt="CI">
   </a>
+  <a href="https://github.com/PhilipAD/Unified-Agents-SDK/actions/workflows/publish.yml">
+    <img src="https://github.com/PhilipAD/Unified-Agents-SDK/actions/workflows/publish.yml/badge.svg" alt="Publish to PyPI">
+  </a>
 </p>
 
 ---
@@ -286,6 +289,8 @@ All constraints are declared in [`pyproject.toml`](pyproject.toml). Upper bounds
 
 ### Option A — pip install (recommended)
 
+Published as [`unified-agents-sdk` on PyPI](https://pypi.org/project/unified-agents-sdk/):
+
 ```bash
 pip install unified-agents-sdk
 ```
@@ -294,7 +299,7 @@ pip install unified-agents-sdk
 
 ```bash
 git clone https://github.com/PhilipAD/Unified-Agents-SDK.git
-cd unified-agents-sdk
+cd Unified-Agents-SDK
 pip install -e ".[dev]"
 ```
 
@@ -1053,7 +1058,7 @@ unified-agents-sdk/
 |---------|------|--------|
 | **v0.1.0** | Core gateway: 3 providers, tool loop, SSE, MCP, named presets, BYOK, 101 tests | ✅ Shipped |
 | **v0.2.0** | Full provider coverage: 8 dedicated adapters (OpenAI, OpenAI Responses, Anthropic, Gemini, Groq, DeepSeek, Mistral, xAI/Grok), extended thinking/reasoning, server-side tools, multimodal I/O, citations, 200 tests | ✅ Shipped |
-| **v0.3.0** | `providers/_shared.py`, OpenAI-compat usage normalisation (`input_tokens`/`output_tokens`), Gemini Vertex/`http_options`, MCP + Postman docs (62 requests), README MCP two-path guide | ✅ Shipped |
+| **v0.3.0** | `providers/_shared.py`, OpenAI-compat usage normalisation, Gemini Vertex/`http_options`, MCP + Postman (62 requests), README MCP two-path guide; **PyPI** (`pip install unified-agents-sdk`), tag-driven publish (trusted publishing, `publish.yml`) | ✅ Shipped |
 | **v0.4** | Auth middleware, rate limiting, request logging | 🔜 Planned |
 | **v0.5** | Agent handoffs — native multi-agent delegation via `call_agent` meta-tool | 🔜 Planned |
 | **v0.6** | Durable execution — resume interrupted runs, persistent step records | 💡 Exploring |

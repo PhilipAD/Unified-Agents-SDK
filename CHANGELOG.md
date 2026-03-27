@@ -9,11 +9,7 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-_Changes that are merged to `main` but not yet released._
-
-### Fixed
-
-- Pin `ruff==0.15.8` in dev dependencies and bump `ruff-pre-commit` to `v0.15.8` so `ruff format --check` in CI matches local/pre-commit output (avoids failures when `ruff>=0.6,<1` resolves to a newer formatter).
+_Changes on `main` not yet tagged._
 
 ---
 
@@ -35,6 +31,14 @@ _Changes that are merged to `main` but not yet released._
 
 - `README.md` — Full **MCP — Model Context Protocol** section (gateway Path 1 vs provider Path 2, bridges, Claude Agent / Codex / Copilot); curated harness table clarified; architecture diagram updated; Postman pointer from MCP section.
 - `postman/unified-agents-sdk.postman_collection.json` — **62 requests** in **11 folders**: OpenAI Responses / xAI / Mistral profiles (folder 2); dynamic contexts `md_hierarchy`, `md_files`, `md_glob` (folder 6); **MCP README scenarios** (folder 11). Collection `info.description` cross-links the README.
+
+### Fixed
+
+- Pin `ruff==0.15.8` in dev dependencies and align `ruff-pre-commit` to `v0.15.8` so `ruff format --check` in CI matches local/pre-commit (avoids drift when `ruff>=0.6,<1` resolves to a newer formatter).
+
+### CI / PyPI
+
+- `.github/workflows/publish.yml` — Trusted publishing to PyPI on `v*.*.*` tags (`environment: pypi`); verbose twine logs; PEP 740 attestations disabled until upload stability improves. Pending trusted publisher **project name** on PyPI must match `pyproject.toml` `[project] name` (`unified-agents-sdk`).
 
 ---
 
