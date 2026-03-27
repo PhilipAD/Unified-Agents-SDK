@@ -498,9 +498,7 @@ async def _compose_registries(
 
         elif spec.mode == "md_files":
             if not spec.paths:
-                warnings.append(
-                    f"Context '{ctx_name}' skipped: mode=md_files requires paths list"
-                )
+                warnings.append(f"Context '{ctx_name}' skipped: mode=md_files requires paths list")
                 continue
 
             async def fetch(_spec: DynamicContext = spec, **kwargs: Any) -> str:

@@ -146,9 +146,7 @@ async def fetch_gemini_skills_catalog(**kwargs: Any) -> str:
     from config.settings import AgentHarnessSettings
 
     h = AgentHarnessSettings()
-    cwd = str(
-        kwargs.get("cwd") or kwargs.get("workspace_dir") or h.GEMINI_CLI_SKILLS_WORKSPACE_DIR
-    )
+    cwd = str(kwargs.get("cwd") or kwargs.get("workspace_dir") or h.GEMINI_CLI_SKILLS_WORKSPACE_DIR)
     user_roots = kwargs.get("skills_user_roots") or ("~/.gemini/skills", "~/.agents/skills")
     project_roots = kwargs.get("skills_project_roots") or (".gemini/skills", ".agents/skills")
     skills = discover_skills(

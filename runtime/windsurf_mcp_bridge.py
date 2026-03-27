@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 def load_windsurf_mcp_presets(config_path: Optional[str] = None) -> Dict[str, MCPServerPreset]:
     path = Path(
-        config_path
-        or str(Path.home() / ".codeium" / "windsurf" / "mcp_config.json")
+        config_path or str(Path.home() / ".codeium" / "windsurf" / "mcp_config.json")
     ).expanduser()
     if not path.is_file():
         logger.debug("Windsurf mcp_config not found: %s", path)

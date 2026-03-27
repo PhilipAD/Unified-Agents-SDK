@@ -174,10 +174,7 @@ async def fetch_gemini_md(**kwargs: Any) -> str:
         if extra:
             names = list(extra) + [n for n in names if n not in extra]
 
-    system_dir = (
-        kwargs.get("gemini_system_config_dir")
-        or h.GEMINI_CLI_SYSTEM_CONFIG_DIR
-    )
+    system_dir = kwargs.get("gemini_system_config_dir") or h.GEMINI_CLI_SYSTEM_CONFIG_DIR
     strip = bool(kwargs.get("gemini_strip_auto_memory", h.GEMINI_CLI_MD_STRIP_AUTO_MEMORY))
 
     text = load_gemini_md_text(

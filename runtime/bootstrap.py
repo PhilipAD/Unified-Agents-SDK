@@ -199,9 +199,7 @@ async def bootstrap(
                     },
                 )
             )
-            logger.info(
-                "Registered custom_md context source (filenames=%s)", _custom_filenames
-            )
+            logger.info("Registered custom_md context source (filenames=%s)", _custom_filenames)
 
     if harness.AGENTS_MD_ENABLED:
         from context.agents_md import fetch_agents_md

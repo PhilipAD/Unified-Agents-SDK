@@ -141,7 +141,7 @@ class OpenAICompatibleProvider(BaseProvider):
                     async for line in resp.aiter_lines():
                         if not line or not line.startswith("data:"):
                             continue
-                        chunk_str = line[len("data:"):].strip()
+                        chunk_str = line[len("data:") :].strip()
                         if chunk_str == "[DONE]":
                             break
 

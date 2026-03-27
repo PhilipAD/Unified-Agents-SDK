@@ -301,8 +301,13 @@ def to_responses_tools(
             "server_label": mcp.get("server_label", "mcp"),
             "require_approval": mcp.get("require_approval", "never"),
         }
-        for field in ("server_url", "server_description", "headers", "authorization",
-                       "allowed_tools"):
+        for field in (
+            "server_url",
+            "server_description",
+            "headers",
+            "authorization",
+            "allowed_tools",
+        ):
             if field in mcp:
                 entry[field] = mcp[field]
         if include_connector_id and "connector_id" in mcp:

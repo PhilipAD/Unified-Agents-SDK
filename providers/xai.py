@@ -92,7 +92,9 @@ class XAIProvider(BaseProvider):
 
         # xAI does not support connector_id / defer_loading
         tools_list = to_responses_tools(
-            tools, built_in_tools, mcp_servers,
+            tools,
+            built_in_tools,
+            mcp_servers,
             include_connector_id=False,
             include_defer_loading=False,
         )
@@ -179,7 +181,9 @@ class XAIProvider(BaseProvider):
             api_kwargs["instructions"] = instructions
 
         tools_list = to_responses_tools(
-            tools, built_in_tools, mcp_servers,
+            tools,
+            built_in_tools,
+            mcp_servers,
             include_connector_id=False,
             include_defer_loading=False,
         )
@@ -236,9 +240,7 @@ class XAIProvider(BaseProvider):
                     elif event_type == "response.completed":
                         final = getattr(event, "response", None)
                         if final:
-                            usage = normalize_responses_usage(
-                                getattr(final, "usage", None)
-                            )
+                            usage = normalize_responses_usage(getattr(final, "usage", None))
                             cost = getattr(final, "cost_in_usd_ticks", None)
                             if cost is not None:
                                 usage["cost_in_usd_ticks"] = cost

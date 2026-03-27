@@ -60,12 +60,7 @@ def parse_mcp_server_configs(
 
         has_command = "command" in cfg and cfg.get("command")
         has_args = "args" in cfg
-        url = (
-            cfg.get("url")
-            or cfg.get("serverUrl")
-            or cfg.get("httpUrl")
-            or cfg.get("http_url")
-        )
+        url = cfg.get("url") or cfg.get("serverUrl") or cfg.get("httpUrl") or cfg.get("http_url")
         if isinstance(url, str):
             url = url.strip()
 
@@ -105,10 +100,7 @@ def parse_mcp_server_configs(
             headers = {str(k): str(v) for k, v in raw_headers.items()}
 
         timeout = float(
-            cfg.get("timeout")
-            or cfg.get("timeout_seconds")
-            or cfg.get("timeoutSeconds")
-            or 30.0
+            cfg.get("timeout") or cfg.get("timeout_seconds") or cfg.get("timeoutSeconds") or 30.0
         )
 
         metadata: Dict[str, Any] = {}
