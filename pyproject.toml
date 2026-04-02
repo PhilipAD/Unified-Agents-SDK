@@ -33,7 +33,7 @@ dependencies = [
     "anthropic>=0.86,<1",       # 0.86.0 — Claude / Anthropic SDK
     "google-genai>=1.47,<2",    # 1.47.0 — Gemini via google-genai (not google-generativeai)
     "groq>=1.0,<2",             # 1.0.0  — Groq (v1 is a breaking re-release)
-    "mistralai>=1.10,<2",       # 1.10.0 — Mistral SDK v1 (chat + agents API)
+    "mistralai>=1.10,<3",       # 1.10.0 — Mistral SDK v1 (chat + agents API)
     "mcp>=1.26,<2",             # 1.26.0 — MCP client (streamable_http / sse)
     # Web framework + transport
     "fastapi>=0.115,<1",        # 0.135.2 latest stable
